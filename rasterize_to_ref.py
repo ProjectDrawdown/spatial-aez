@@ -37,5 +37,5 @@ Image = None
 Shapefile = None
 
 # Build image overviews
-subprocess.check_call("gdaladdo --config COMPRESS_OVERVIEW DEFLATE "+OutputImage+" 2 4 8 16 32 64", shell=True)
+#subprocess.check_call("gdaladdo --config COMPRESS_OVERVIEW DEFLATE "+OutputImage+" 2 4 8 16 32 64", shell=True)
 print("Done.")
