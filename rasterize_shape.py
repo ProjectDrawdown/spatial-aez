@@ -20,7 +20,8 @@ Shapefile_layer = Shapefile.GetLayer()
 
 # Rasterise
 print("Rasterising shapefile...")
-Output = gdal.GetDriverByName(gdalformat).Create(OutputImage, Image.RasterXSize, Image.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
+Output = gdal.GetDriverByName(gdalformat).Create(OutputImage, Image.RasterXSize,
+        Image.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
 Output.SetProjection(Image.GetProjectionRef())
 Output.SetGeoTransform(Image.GetGeoTransform()) 
 
