@@ -24,8 +24,10 @@ for feature in layer:
     if os.path.exists(tmpfile.name):
         driver.DeleteDataSource(tmpfile.name)
 
+    # make a new Layer for this one Feature
     outDataSource = driver.CreateDataSource(tmpfile.name)
-    outLayer = outDataSource.CreateLayer("feature", geom_type=ogr.wkbPolygon)
+    outLayer = outDataSource.CreateLayer("feature", geom_type=ogr.wkbPolygon,
+            srs=layer.GetSpatialRef())
     outLayer.CreateField(ogr.FieldDefn("SOVEREIGNT", ogr.OFTString))
     new_feat = ogr.Feature(outLayer.GetLayerDefn())
     geom = feature.GetGeometryRef()
@@ -50,17 +52,16 @@ for feature in layer:
     # Write data to band 1
     Band = Output.GetRasterBand(1)
     Band.SetNoDataValue(0)
-    print("1")
     gdal.RasterizeLayer(Output, [1], outLayer, options=['ALL_TOUCHED=TRUE,ATTRIBUTE=SOVEREIGNT'])
-    print("2")
 
     # Close datasets
     Band = None
     Output = None
-    Image = None
-    Shapefile = None
     outDataSource = None
     outLayer = None
 
     print("Done.")
-    break
+
+
+Shapefile = None
+Image = None
