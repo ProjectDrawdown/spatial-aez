@@ -1,30 +1,32 @@
 # A script to rasterise a shapefile to the same projection & pixel resolution as a reference image.
+import collections
 import os.path
 import subprocess
 import tempfile
 
 import osgeo.gdal
+import osgeo.gdal_array
 import osgeo.ogr
 
 shapefile = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-imagename = 'Beck_KG_V1/Beck_KG_V1_present_conf_0p083.tif'
-OutputImage = 'Result.tif'
+worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_conf_0p083.tif'
 
 ##########################################################
 # Get projection info from reference image
-Image = osgeo.gdal.Open(imagename, osgeo.gdal.GA_ReadOnly)
+worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
 
-# Open Shapefile
-Shapefile = osgeo.ogr.Open(shapefile)
-assert Shapefile.GetLayerCount() == 1
-layer = Shapefile.GetLayerByIndex(0)
+# Open shapefile
+shapefile = osgeo.ogr.Open(shapefile)
+assert shapefile.GetLayerCount() == 1
+layer = shapefile.GetLayerByIndex(0)
 
 for feature in layer:
     sovereignty = feature.GetField("SOVEREIGNT")
+    a3 = feature.GetField("SOV_A3")
 
     # Make a new shapefile, to hold the one Feature we're looking at in this loop
     driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
-    shpfile = tempfile.NamedTemporaryFile(suffix='.shp')
+    shpfile = tempfile.NamedTemporaryFile(prefix=f'{a3}_', suffix='.shp')
     if os.path.exists(shpfile.name):
         driver.DeleteDataSource(shpfile.name)
 
@@ -48,10 +50,10 @@ for feature in layer:
     if False:
         print(f"Rasterising shapefile for {str(sovereignty)}...")
         datatype = osgeo.gdal.GDT_Byte
-        Output = osgeo.gdal.GetDriverByName('GTiff').Create(OutputImage, Image.RasterXSize,
-                Image.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
-        Output.SetProjection(Image.GetProjectionRef())
-        Output.SetGeoTransform(Image.GetGeoTransform()) 
+        Output = osgeo.gdal.GetDriverByName('GTiff').Create('Result.tif', worldimage.RasterXSize,
+                worldimage.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
+        Output.SetProjection(worldimage.GetProjectionRef())
+        Output.SetGeoTransform(worldimage.GetGeoTransform()) 
         Band = Output.GetRasterBand(1)
         Band.SetNoDataValue(0)
         osgeo.gdal.RasterizeLayer(Output, [1], outLayer,
@@ -60,13 +62,21 @@ for feature in layer:
     geom = feature.GetGeometryRef()
     minX, maxX, minY, maxY = geom.GetEnvelope()
     bbox = (minX, maxY, maxX, minY)
-    clippedfile = tempfile.NamedTemporaryFile(suffix='.tif')
+    clippedfile = tempfile.NamedTemporaryFile(prefix=f'{a3}_', suffix='.tif')
 
     # Apply shapefile as a mask
     subprocess.call(['gdalwarp', '-cutline', shpfile.name,
         '-te', str(minX), str(minY), str(maxX), str(maxY),
-        imagename, clippedfile.name])
+        worldmapname, clippedfile.name])
 
+    r = osgeo.gdal_array.LoadFile(clippedfile.name)
+    counts = collections.Counter(r.flatten())
+    print(f'opening {clippedfile.name}')
+    ctable = osgeo.gdal.Open(clippedfile.name,
+            osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetRasterColorTable()
+    for (label, count) in counts.items():
+      color = ctable.GetColorEntry(label)
+      print(f'({color[0]}, {color[1]}, {color[2]}): {count}')
 
     # Close datasets. GDAL needs this as it implements some of the work in the destructor.
     Band = None
@@ -77,9 +87,8 @@ for feature in layer:
     clippedfile = None
 
     print("Done.")
-    break
 
 
-# Close the original World-level shapefile and Image.
-Shapefile = None
-Image = None
+# Close the original World-level shapefile and worldimage.
+shapefile = None
+worldimage = None
