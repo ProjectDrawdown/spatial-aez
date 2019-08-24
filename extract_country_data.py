@@ -1,4 +1,4 @@
-# A script to rasterise a shapefile to the same projection & pixel resolution as a reference image.
+# Extract counts of each Köppen-Geiger class for each country, exported to CSV.
 import collections
 import os.path
 import subprocess
@@ -8,17 +8,16 @@ import osgeo.gdal
 import osgeo.gdal_array
 import osgeo.ogr
 
-shapefile = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_conf_0p083.tif'
-
-##########################################################
-# Get projection info from reference image
+shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
+worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p083.tif'
 worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
+ctable = worldimage.GetRasterBand(1).GetColorTable()
 
 # Open shapefile
-shapefile = osgeo.ogr.Open(shapefile)
+shapefile = osgeo.ogr.Open(shapefilename)
 assert shapefile.GetLayerCount() == 1
 layer = shapefile.GetLayerByIndex(0)
+srs = layer.GetSpatialRef()
 
 for feature in layer:
     sovereignty = feature.GetField("SOVEREIGNT")
@@ -32,8 +31,7 @@ for feature in layer:
 
     # make a new Layer for this one Feature
     outDataSource = driver.CreateDataSource(shpfile.name)
-    outLayer = outDataSource.CreateLayer("feature", geom_type=osgeo.ogr.wkbPolygon,
-            srs=layer.GetSpatialRef())
+    outLayer = outDataSource.CreateLayer("feature", geom_type=osgeo.ogr.wkbPolygon, srs=srs)
     outLayer.CreateField(osgeo.ogr.FieldDefn("SOVEREIGNT", osgeo.ogr.OFTString))
     new_feat = osgeo.ogr.Feature(outLayer.GetLayerDefn())
     geom = feature.GetGeometryRef()
@@ -46,7 +44,7 @@ for feature in layer:
     outDataSource = driver.Open(shpfile.name, 0)
     outLayer = outDataSource.GetLayer()
 
-    # Rasterise the shapefile we just created
+    # Rasterise the shapefile we just created, for debugging.
     if False:
         print(f"Rasterising shapefile for {str(sovereignty)}...")
         datatype = osgeo.gdal.GDT_Byte
@@ -64,19 +62,15 @@ for feature in layer:
     bbox = (minX, maxY, maxX, minY)
     clippedfile = tempfile.NamedTemporaryFile(prefix=f'{a3}_', suffix='.tif')
 
-    # Apply shapefile as a mask
+    # Apply shapefile as a mask, and crop to the size of the mask
     subprocess.call(['gdalwarp', '-cutline', shpfile.name,
         '-te', str(minX), str(minY), str(maxX), str(maxY),
         worldmapname, clippedfile.name])
 
-    r = osgeo.gdal_array.LoadFile(clippedfile.name)
-    counts = collections.Counter(r.flatten())
-    print(f'opening {clippedfile.name}')
-    ctable = osgeo.gdal.Open(clippedfile.name,
-            osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetRasterColorTable()
+    counts = collections.Counter(osgeo.gdal_array.LoadFile(clippedfile.name).flatten())
     for (label, count) in counts.items():
-      color = ctable.GetColorEntry(label)
-      print(f'({color[0]}, {color[1]}, {color[2]}): {count}')
+        color = ctable.GetColorEntry(int(label))
+        print(f'({color[0]}, {color[1]}, {color[2]}): {count}')
 
     # Close datasets. GDAL needs this as it implements some of the work in the destructor.
     Band = None
