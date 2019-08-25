@@ -104,7 +104,7 @@ def main(shapefilename, worldmapname, tmpdir, csvfilename):
     for idx, feature in enumerate(layer):
         sovereignty = feature.GetField("SOVEREIGNT")
         a3 = feature.GetField("SOV_A3")
-        if df.get(sovereignty, None) is None:
+        if not sovereignty in df.index:
             df.loc[sovereignty] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(worldmapname=worldmapname, worldimage=worldimage,
