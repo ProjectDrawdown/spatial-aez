@@ -120,7 +120,7 @@ def main(shapefilename, worldmapname, tmpdir, csvfilename):
 
 if __name__ == '__main__':
     shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-    worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p083.tif'
+    worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     tmpdirobj = tempfile.TemporaryDirectory()
     csvfilename = 'Köppen-Geiger-by-country.csv'
     main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
