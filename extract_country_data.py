@@ -16,17 +16,6 @@ pd.set_option("display.max_columns", 40)
 osgeo.gdal.PushErrorHandler("CPLQuietErrorHandler")
 
 
-shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
-worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
-ctable = worldimage.GetRasterBand(1).GetColorTable()
-csvfilename = 'Köppen-Geiger-by-country.csv'
-
-shapefile = osgeo.ogr.Open(shapefilename)
-assert shapefile.GetLayerCount() == 1
-layer = shapefile.GetLayerByIndex(0)
-srs = layer.GetSpatialRef()
-
 
 # Lookup table of pixel color to Köppen-Geiger class.
 #
@@ -46,84 +35,94 @@ kg_colors = {
     (178, 178, 178): 'ET',  (102, 102, 102): 'EF',
     }
 
-def rgb_to_kg(color):
-    if color == (255, 255, 255):
-        return None
-    return kg_colors[color]
 
-df = pd.DataFrame(columns=kg_colors.values())
-df.index.name = 'Country'
 tmpdirobj = tempfile.TemporaryDirectory()
 tmpdir = tmpdirobj.name
 
+shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
+worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p083.tif'
+worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
+ctable = worldimage.GetRasterBand(1).GetColorTable()
+csvfilename = 'Köppen-Geiger-by-country.csv'
 
-for idx, feature in enumerate(layer):
-    sovereignty = feature.GetField("SOVEREIGNT")
-    a3 = feature.GetField("SOV_A3")
-    if df.get(sovereignty, None) is None:
-        df.loc[sovereignty] = [0] * len(df.columns)
 
-    # Make a new shapefile, to hold the one Feature we're looking at in this loop
+
+def rasterize_shapefile(shpfile, outfile):
+    """Rasterize a shapefile to TIFF."""
     driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
-    shpfile = os.path.join(tmpdir, f'{a3}_feature_{idx}.shp')
+    data_source = driver.Open(shpfile, 0)
+    layer = data_source.GetLayer()
+    datatype = osgeo.gdal.GDT_Byte
+    output = osgeo.gdal.GetDriverByName('GTiff').Create(outfile, worldimage.RasterXSize,
+            worldimage.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
+    output.SetProjection(worldimage.GetProjectionRef())
+    output.SetGeoTransform(worldimage.GetGeoTransform()) 
+    band = output.GetRasterBand(1)
+    band.SetNoDataValue(0)
+    osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ALL_TOUCHED=TRUE,ATTRIBUTE=SOVEREIGNT'])
 
-    # make a new Layer for this one Feature
-    outDataSource = driver.CreateDataSource(shpfile)
-    outLayer = outDataSource.CreateLayer("feature", geom_type=osgeo.ogr.wkbPolygon, srs=srs)
-    outLayer.CreateField(osgeo.ogr.FieldDefn("SOVEREIGNT", osgeo.ogr.OFTString))
-    new_feat = osgeo.ogr.Feature(outLayer.GetLayerDefn())
+
+def one_feature_shapefile(a3, idx, feature, tmpdir, srs):
+    """Make a new shapefile, to hold the one Feature we're looking at."""
+    driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
+    shpfile = os.path.join(tmpdir, f'{idx}_feature_mask_{a3}.shp')
+    data_source = driver.CreateDataSource(shpfile)
+    layer = data_source.CreateLayer("feature", geom_type=osgeo.ogr.wkbPolygon, srs=srs)
+    new_feat = osgeo.ogr.Feature(layer.GetLayerDefn())
     geom = feature.GetGeometryRef()
     new_feat.SetGeometry(geom)
-    new_feat.SetField("SOVEREIGNT", sovereignty)
-    outLayer.CreateFeature(new_feat)
-    new_feat = None
-    outDataSource = None
-    outLayer = None
-    outDataSource = driver.Open(shpfile, 0)
-    outLayer = outDataSource.GetLayer()
-
-    # Rasterise the shapefile we just created
-    if False:
-        datatype = osgeo.gdal.GDT_Byte
-        shptiffile = os.path.join(tmpdir, f'{a3}_feature_shp_{idx}.tif')
-        Output = osgeo.gdal.GetDriverByName('GTiff').Create(shptiffile, worldimage.RasterXSize,
-                worldimage.RasterYSize, 1, datatype, options=['COMPRESS=DEFLATE'])
-        Output.SetProjection(worldimage.GetProjectionRef())
-        Output.SetGeoTransform(worldimage.GetGeoTransform()) 
-        Band = Output.GetRasterBand(1)
-        Band.SetNoDataValue(0)
-        osgeo.gdal.RasterizeLayer(Output, [1], outLayer,
-                options=['ALL_TOUCHED=TRUE,ATTRIBUTE=SOVEREIGNT'])
+    layer.CreateFeature(new_feat)
 
     # Close datasets. GDAL needs this as it implements some of the work in the destructor.
-    Band = None
-    Output = None
-    outDataSource = None
-    outLayer = None
+    new_feat = None
+    data_source = None
+    layer = None
+
+    # Rasterise the shapefile just created. We don't strictly need this, but useful for debugging.
+    outfile = os.path.join(tmpdir, f'{idx}_feature_mask_{a3}.tif')
+    rasterize_shapefile(shpfile=shpfile, outfile=outfile)
 
     # Apply shapefile as a mask, and crop to the size of the mask
-    clippedfile = os.path.join(tmpdir, f'{a3}_feature_{idx}.tif')
+    clippedfile = os.path.join(tmpdir, f'{idx}_feature_{a3}.tif')
     result = osgeo.gdal.Warp(clippedfile, worldmapname, cutlineDSName=shpfile, cropToCutline=True)
     if result is not None:
-        # have to discard result to let GDAL run destructors, otherwise clippedfile
-        # will only be partially written out when the gdal_array.LoadFile runs.
-        result = None
-        counts = collections.Counter(osgeo.gdal_array.LoadFile(clippedfile).flatten())
-        for (label, count) in counts.items():
-            r, g, b, a = ctable.GetColorEntry(int(label))
-            color = (r, g, b)
-            if color == (255, 255, 255):
-                # blank pixel == masked off, just skip it.
-                continue
-            kg_class = kg_colors[color]
-            df.loc[sovereignty, kg_class] += count
-    else:
-        print(f"{sovereignty} feature #{idx} is empty, skipping.")
+        return clippedfile
 
 
+def update_df_from_image(filename, sovereignty, df):
+    """Count K-G classes by pixel, add to df."""
+    counts = collections.Counter(osgeo.gdal_array.LoadFile(filename).flatten())
+    for (label, count) in counts.items():
+        r, g, b, a = ctable.GetColorEntry(int(label))
+        color = (r, g, b)
+        if color == (255, 255, 255):
+            # blank pixel == masked off, just skip it.
+            continue
+        kg_class = kg_colors[color]
+        df.loc[sovereignty, kg_class] += count
 
-df.sort_index(axis='index', to_csv(csvfilename)
 
-# Close the original World-level shapefile and worldimage.
-shapefile = None
-worldimage = None
+def main():
+    df = pd.DataFrame(columns=kg_colors.values())
+    df.index.name = 'Country'
+    shapefile = osgeo.ogr.Open(shapefilename)
+    assert shapefile.GetLayerCount() == 1
+    layer = shapefile.GetLayerByIndex(0)
+    srs = layer.GetSpatialRef()
+
+    for idx, feature in enumerate(layer):
+        sovereignty = feature.GetField("SOVEREIGNT")
+        a3 = feature.GetField("SOV_A3")
+        if df.get(sovereignty, None) is None:
+            df.loc[sovereignty] = [0] * len(df.columns)
+
+        clippedfile = one_feature_shapefile(a3=a3, idx=idx, feature=feature, tmpdir=tmpdir, srs=srs)
+        if clippedfile:
+            update_df_from_image(filename=clippedfile, sovereignty=sovereignty, df=df)
+        else:
+            print(f"{sovereignty} feature #{idx} is empty, skipping.")
+
+    df.sort_index(axis='index').to_csv(csvfilename)
+
+
+main()
