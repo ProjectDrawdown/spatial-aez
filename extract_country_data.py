@@ -36,18 +36,7 @@ kg_colors = {
     }
 
 
-tmpdirobj = tempfile.TemporaryDirectory()
-tmpdir = tmpdirobj.name
-
-shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p083.tif'
-worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
-ctable = worldimage.GetRasterBand(1).GetColorTable()
-csvfilename = 'Köppen-Geiger-by-country.csv'
-
-
-
-def rasterize_shapefile(shpfile, outfile):
+def rasterize_shapefile(worldimage, shpfile, outfile):
     """Rasterize a shapefile to TIFF."""
     driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
     data_source = driver.Open(shpfile, 0)
@@ -62,10 +51,10 @@ def rasterize_shapefile(shpfile, outfile):
     osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ALL_TOUCHED=TRUE,ATTRIBUTE=SOVEREIGNT'])
 
 
-def one_feature_shapefile(a3, idx, feature, tmpdir, srs):
+def one_feature_shapefile(worldmapname, worldimage, a3, idx, feature, tmpdir, srs):
     """Make a new shapefile, to hold the one Feature we're looking at."""
     driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
-    shpfile = os.path.join(tmpdir, f'{idx}_feature_mask_{a3}.shp')
+    shpfile = os.path.join(tmpdir, f'{a3}_{idx}_feature_mask.shp')
     data_source = driver.CreateDataSource(shpfile)
     layer = data_source.CreateLayer("feature", geom_type=osgeo.ogr.wkbPolygon, srs=srs)
     new_feat = osgeo.ogr.Feature(layer.GetLayerDefn())
@@ -79,17 +68,17 @@ def one_feature_shapefile(a3, idx, feature, tmpdir, srs):
     layer = None
 
     # Rasterise the shapefile just created. We don't strictly need this, but useful for debugging.
-    outfile = os.path.join(tmpdir, f'{idx}_feature_mask_{a3}.tif')
-    rasterize_shapefile(shpfile=shpfile, outfile=outfile)
+    outfile = os.path.join(tmpdir, f'{a3}_{idx}_feature_mask.tif')
+    rasterize_shapefile(worldimage=worldimage, shpfile=shpfile, outfile=outfile)
 
     # Apply shapefile as a mask, and crop to the size of the mask
-    clippedfile = os.path.join(tmpdir, f'{idx}_feature_{a3}.tif')
+    clippedfile = os.path.join(tmpdir, f'{a3}_{idx}_feature.tif')
     result = osgeo.gdal.Warp(clippedfile, worldmapname, cutlineDSName=shpfile, cropToCutline=True)
     if result is not None:
         return clippedfile
 
 
-def update_df_from_image(filename, sovereignty, df):
+def update_df_from_image(filename, sovereignty, ctable, df):
     """Count K-G classes by pixel, add to df."""
     counts = collections.Counter(osgeo.gdal_array.LoadFile(filename).flatten())
     for (label, count) in counts.items():
@@ -102,13 +91,15 @@ def update_df_from_image(filename, sovereignty, df):
         df.loc[sovereignty, kg_class] += count
 
 
-def main():
+def main(shapefilename, worldmapname, tmpdir, csvfilename):
     df = pd.DataFrame(columns=kg_colors.values())
     df.index.name = 'Country'
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
     layer = shapefile.GetLayerByIndex(0)
     srs = layer.GetSpatialRef()
+    worldimage = osgeo.gdal.Open(worldmapname, osgeo.gdal.GA_ReadOnly)
+    ctable = worldimage.GetRasterBand(1).GetColorTable()
 
     for idx, feature in enumerate(layer):
         sovereignty = feature.GetField("SOVEREIGNT")
@@ -116,13 +107,21 @@ def main():
         if df.get(sovereignty, None) is None:
             df.loc[sovereignty] = [0] * len(df.columns)
 
-        clippedfile = one_feature_shapefile(a3=a3, idx=idx, feature=feature, tmpdir=tmpdir, srs=srs)
+        clippedfile = one_feature_shapefile(worldmapname=worldmapname, worldimage=worldimage,
+                a3=a3, idx=idx, feature=feature, tmpdir=tmpdir, srs=srs)
         if clippedfile:
-            update_df_from_image(filename=clippedfile, sovereignty=sovereignty, df=df)
+            update_df_from_image(filename=clippedfile, sovereignty=sovereignty,
+                    ctable=ctable, df=df)
         else:
             print(f"{sovereignty} feature #{idx} is empty, skipping.")
 
     df.sort_index(axis='index').to_csv(csvfilename)
 
 
-main()
+if __name__ == '__main__':
+    shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
+    worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p083.tif'
+    tmpdirobj = tempfile.TemporaryDirectory()
+    csvfilename = 'Köppen-Geiger-by-country.csv'
+    main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
+            csvfilename=csvfilename)
