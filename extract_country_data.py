@@ -1,5 +1,6 @@
 # Extract counts of each Köppen-Geiger class for each country, exported to CSV.
 import collections
+import math
 import os.path
 import shutil
 import subprocess
@@ -48,7 +49,7 @@ def rasterize_shapefile(worldimage, shpfile, outfile):
     output.SetGeoTransform(worldimage.GetGeoTransform()) 
     band = output.GetRasterBand(1)
     band.SetNoDataValue(0)
-    osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ALL_TOUCHED=TRUE,ATTRIBUTE=SOVEREIGNT'])
+    osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ATTRIBUTE=SOVEREIGNT'])
 
 
 def one_feature_shapefile(worldmapname, worldimage, a3, idx, feature, tmpdir, srs):
@@ -73,22 +74,33 @@ def one_feature_shapefile(worldmapname, worldimage, a3, idx, feature, tmpdir, sr
 
     # Apply shapefile as a mask, and crop to the size of the mask
     clippedfile = os.path.join(tmpdir, f'{a3}_{idx}_feature.tif')
-    result = osgeo.gdal.Warp(clippedfile, worldmapname, cutlineDSName=shpfile, cropToCutline=True)
+    result = osgeo.gdal.Warp(clippedfile, worldmapname, cutlineDSName=shpfile, cropToCutline=True,
+            warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE'])
     if result is not None:
         return clippedfile
 
 
 def update_df_from_image(filename, sovereignty, ctable, df):
     """Count K-G classes by pixel, add to df."""
-    counts = collections.Counter(osgeo.gdal_array.LoadFile(filename).flatten())
-    for (label, count) in counts.items():
-        r, g, b, a = ctable.GetColorEntry(int(label))
-        color = (r, g, b)
-        if color == (255, 255, 255):
-            # blank pixel == masked off, just skip it.
-            continue
-        kg_class = kg_colors[color]
-        df.loc[sovereignty, kg_class] += count
+    img = osgeo.gdal.Open(filename, osgeo.gdal.GA_ReadOnly)
+    xmin, xsiz, xrot, ymin, yrot, ysiz = img.GetGeoTransform()
+    img = None
+    arr = osgeo.gdal_array.LoadFile(filename)
+    yrad = math.radians(abs(ysiz))
+    y = math.radians(ymin)
+    for row in arr:
+        xwidth = xsiz * 111132.954 * math.cos(y)
+        km2 = abs(ysiz) * xwidth
+        counts = collections.Counter(row)
+        for (label, count) in counts.items():
+            r, g, b, a = ctable.GetColorEntry(int(label))
+            color = (r, g, b)
+            if color == (255, 255, 255):
+                # blank pixel == masked off, just skip it.
+                continue
+            kg_class = kg_colors[color]
+            df.loc[sovereignty, kg_class] += (count * km2)
+        y -= yrad
 
 
 def main(shapefilename, worldmapname, tmpdir, csvfilename):
@@ -114,8 +126,10 @@ def main(shapefilename, worldmapname, tmpdir, csvfilename):
                     ctable=ctable, df=df)
         else:
             print(f"{sovereignty} feature #{idx} is empty, skipping.")
+        if idx > 4:
+            break
 
-    df.sort_index(axis='index').to_csv(csvfilename)
+    df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
 
 if __name__ == '__main__':
