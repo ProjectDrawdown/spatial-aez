@@ -89,8 +89,7 @@ def update_df_from_image(filename, sovereignty, ctable, df):
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
     for row in arr:
-        xwidth = xsiz * 111132.954 * math.cos(y)
-        km2 = abs(ysiz) * xwidth
+        km2 = (111.132954 * abs(ysiz)) * (111.132954 * xsiz * math.cos(y))
         counts = collections.Counter(row)
         for (label, count) in counts.items():
             r, g, b, a = ctable.GetColorEntry(int(label))
