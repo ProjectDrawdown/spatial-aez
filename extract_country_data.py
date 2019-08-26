@@ -89,7 +89,13 @@ def update_df_from_image(filename, sovereignty, ctable, df):
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
     for row in arr:
-        km2 = (111.132954 * abs(ysiz)) * (111.132954 * xsiz * math.cos(y))
+        # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
+        xlen = abs(xsiz) * (math.cos(y) * math.pi * 6378.137 /
+                (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
+        # https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
+        ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y)) + 
+                (0.001175 * math.cos(4 * y)))
+        km2 = xlen * ylen
         counts = collections.Counter(row)
         for (label, count) in counts.items():
             r, g, b, a = ctable.GetColorEntry(int(label))
@@ -125,8 +131,6 @@ def main(shapefilename, worldmapname, tmpdir, csvfilename):
                     ctable=ctable, df=df)
         else:
             print(f"{sovereignty} feature #{idx} is empty, skipping.")
-        if idx > 4:
-            break
 
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
@@ -138,3 +142,4 @@ if __name__ == '__main__':
     csvfilename = 'Köppen-Geiger-by-country.csv'
     main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
             csvfilename=csvfilename)
+    print(str(pd.read_csv('Köppen-Geiger-by-country.csv').set_index('Country').sum(axis=1)))
