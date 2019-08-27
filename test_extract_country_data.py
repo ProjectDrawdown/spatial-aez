@@ -2,6 +2,7 @@ import os.path
 import pytest
 import tempfile
 
+import pandas as pd
 import extract_country_data as ecd
 
 def test_admin_lookup():
@@ -17,3 +18,6 @@ def test_generate_csv():
     ecd.main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
             csvfilename=csvfilename)
     assert os.path.exists(csvfilename)
+    df = pd.read_csv(csvfilename).set_index('Country').sum(axis=1)
+    assert 'United States of America' in df.index
+    assert df['United States of America'] > 1

@@ -2,8 +2,6 @@
 import collections
 import math
 import os.path
-import shutil
-import subprocess
 import tempfile
 
 import osgeo.gdal
@@ -14,6 +12,7 @@ import pandas as pd
 
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 40)
+pd.options.display.float_format = '{:.2f}'.format
 osgeo.gdal.PushErrorHandler("CPLQuietErrorHandler")
 
 
@@ -49,7 +48,7 @@ def rasterize_shapefile(worldimage, shpfile, outfile):
     output.SetGeoTransform(worldimage.GetGeoTransform()) 
     band = output.GetRasterBand(1)
     band.SetNoDataValue(0)
-    osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ATTRIBUTE=SOVEREIGNT'])
+    osgeo.gdal.RasterizeLayer(output, [1], layer, options=['ATTRIBUTE=ADMIN'])
 
 
 def one_feature_shapefile(worldmapname, worldimage, a3, idx, feature, tmpdir, srs):
@@ -80,7 +79,7 @@ def one_feature_shapefile(worldmapname, worldimage, a3, idx, feature, tmpdir, sr
         return clippedfile
 
 
-def update_df_from_image(filename, sovereignty, ctable, df):
+def update_df_from_image(filename, admin, ctable, df):
     """Count K-G classes by pixel, add to df."""
     img = osgeo.gdal.Open(filename, osgeo.gdal.GA_ReadOnly)
     xmin, xsiz, xrot, ymin, yrot, ysiz = img.GetGeoTransform()
@@ -104,12 +103,87 @@ def update_df_from_image(filename, sovereignty, ctable, df):
                 # blank pixel == masked off, just skip it.
                 continue
             kg_class = kg_colors[color]
-            df.loc[sovereignty, kg_class] += (count * km2)
+            df.loc[admin, kg_class] += (count * km2)
         y -= yrad
 
 
+def admin_lookup(admin):
+    """Map Natural Earth ADMIN names to Drawdown country names."""
+    adminmap = {
+            'Akrotiri Sovereign Base Area': 'United Kingdom',
+            'Aland': 'Finland',
+            'American Samoa': 'United States of America',
+            'Anguilla': 'United Kingdom',
+            'Aruba': 'Netherlands',
+            'Ashmore and Cartier Islands': 'Australia',
+            'The Bahamas': 'Bahamas',
+            'Bajo Nuevo Bank (Petrel Is.)': None,
+            'Baykonur Cosmodrome': 'Kazakhstan',
+            'British Indian Ocean Territory': 'United Kingdom',
+            'British Virgin Islands': 'United Kingdom',
+            'Bermuda': 'United Kingdom',
+            'Cabo Verde': 'Cape Verde',
+            'Cayman Islands': 'United Kingdom',
+            'Clipperton Island': 'France',
+            'Republic of the Congo': 'Congo',
+            'Coral Sea Islands': 'Australia',
+            'Cyprus No Mans Area': 'Cyprus',
+            'Czechia': 'Czech Republic',
+            'Dhekelia Sovereign Base Area': 'United Kingdom',
+            'East Timor': 'Timor-Leste',
+            'Falkland Islands': None,
+            'Federated States of Micronesia': 'Micronesia (Federated States of)',
+            'French Polynesia': 'France',
+            'French Southern and Antarctic Lands': 'France',
+            'Gibraltar': 'United Kingdom',
+            'Guam': 'United States of America',
+            'Guernsey': 'United Kingdom',
+            'Heard Island and McDonald Islands': 'Australia',
+            'Hong Kong S.A.R.': 'Hong Kong',
+            'Indian Ocean Territories': None,
+            'Isle of Man': None,
+            'Ivory Coast': "Côte d'Ivoire",
+            'Jersey': 'United Kingdom',
+            'North Korea': "Democratic People's Republic of Korea",
+            'Kosovo': None,
+            'Laos': "Lao People's Democratic Republic",
+            'Macedonia': 'The former Yugoslav Republic of Macedonia',
+            'Macao S.A.R': None,
+            'Montserrat': 'United Kingdom',
+            'New Caledonia': 'France',
+            'Northern Cyprus': 'Cyprus',
+            'Norfolk Island': 'Australia',
+            'Northern Mariana Islands': 'United States of America',
+            'Pitcairn Islands': 'United Kingdom',
+            'Puerto Rico': 'United States of America',
+            'Republic of Serbia': 'Serbia',
+            'Russia': 'Russian Federation',
+            'Saint Barthelemy': 'France',
+            'Saint Helena': 'United Kingdom',
+            'Saint Martin': None,
+            'Saint Pierre and Miquelon': 'France',
+            'Scarborough Reef': None,
+            'Serranilla Bank': None,
+            'Siachen Glacier': None,
+            'Sint Maarten': None,
+            'Somaliland': 'Somalia',
+            'South Georgia and the Islands': 'United Kingdom',
+            'South Korea': 'Republic of Korea (South Korea)',
+            'Spratly Islands': None,
+            'Syria': 'Syrian Arab Republic',
+            'Turks and Caicos Islands': 'United Kingdom',
+            'United States Minor Outlying Islands': 'United States of America',
+            'United States Virgin Islands': 'United States of America',
+            'US Naval Base Guantanamo Bay': 'United States of America',
+            'Vatican': 'Holy See',
+            'Wallis and Futuna': 'France',
+            'eSwatini': 'Swaziland',
+            }
+    return adminmap.get(admin, admin)
+
+
 def main(shapefilename, worldmapname, tmpdir, csvfilename):
-    df = pd.DataFrame(columns=kg_colors.values())
+    df = pd.DataFrame(columns=kg_colors.values(), dtype=float)
     df.index.name = 'Country'
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
@@ -119,27 +193,39 @@ def main(shapefilename, worldmapname, tmpdir, csvfilename):
     ctable = worldimage.GetRasterBand(1).GetColorTable()
 
     for idx, feature in enumerate(layer):
-        sovereignty = feature.GetField("SOVEREIGNT")
+        admin = admin_lookup(feature.GetField("ADMIN"))
+        if admin is None:
+            continue
         a3 = feature.GetField("SOV_A3")
-        if not sovereignty in df.index:
-            df.loc[sovereignty] = [0] * len(df.columns)
+        if not admin in df.index:
+            df.loc[admin] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(worldmapname=worldmapname, worldimage=worldimage,
                 a3=a3, idx=idx, feature=feature, tmpdir=tmpdir, srs=srs)
         if clippedfile:
-            update_df_from_image(filename=clippedfile, sovereignty=sovereignty,
+            print(f"{admin:<41} #{a3}_{idx}")
+            update_df_from_image(filename=clippedfile, admin=admin,
                     ctable=ctable, df=df)
         else:
-            print(f"{sovereignty} feature #{idx} is empty, skipping.")
+            print(f"{admin:<41} #{a3}_{idx} is empty, skipping.")
 
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
 
 if __name__ == '__main__':
     shapefilename = 'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-    worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
+
     tmpdirobj = tempfile.TemporaryDirectory()
-    csvfilename = 'Köppen-Geiger-by-country.csv'
+    worldmapname = 'Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
+    csvfilename = 'Köppen-Geiger-present-by-country.csv'
+    print(worldmapname)
     main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
             csvfilename=csvfilename)
-    print(str(pd.read_csv('Köppen-Geiger-by-country.csv').set_index('Country').sum(axis=1)))
+    print('\n')
+
+    tmpdirobj = tempfile.TemporaryDirectory()
+    worldmapname = 'Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
+    csvfilename = 'Köppen-Geiger-future-by-country.csv'
+    print(worldmapname)
+    main(shapefilename=shapefilename, worldmapname=worldmapname, tmpdir=tmpdirobj.name,
+            csvfilename=csvfilename)
