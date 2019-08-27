@@ -1,4 +1,4 @@
-##Process Köppen-Geiger climate classification maps##
+## Process Köppen-Geiger climate classification maps ##
 
 Code in this repository processes the data files from the Nature article
 ["Present and future Köppen-Geiger climate classification maps at 1-km resolution"]
