@@ -1,3 +1,4 @@
 Result.tif filter=lfs diff=lfs merge=lfs -text
-Beck_KG_V1/*.tif filter=lfs diff=lfs merge=lfs -text
-ne_10m_admin_0_countries/*.shp filter=lfs diff=lfs merge=lfs -text
+data/**/*.tif filter=lfs diff=lfs merge=lfs -text
+data/**/*.shp filter=lfs diff=lfs merge=lfs -text
+data/**/*.dbf filter=lfs diff=lfs merge=lfs -text
