@@ -2,17 +2,15 @@
 
 Code in this repository extracts land area data from spatial maps for use in climate solution models.
 
-The output of this code is a series of CSV files for present and future, with
-a row per country and column per data class.  Names are normalized to
-those used in [Project Drawdown](https://drawdown.org). Square kilometers per
-[Köppen-Geiger class](https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification)
-are calculated per country, correcting for WGS84 projection.
+The output of this code is a series of CSV files, with a row per country and column
+per data class.  Names are normalized to those used in [Project Drawdown](https://drawdown.org).
+Data is calculated per country, correcting for WGS84 projection.
 
 Note that the data processed in this repository comes from external sources, several of which require
 attribution in the form of a citation of their contribution. Please see LICENSE.md for details and links.
 
 
-### Köppen-Geiger
+### [Köppen-Geiger](https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification)
 Data files come from the Nature article
 ["Present and future Köppen-Geiger climate classification maps at 1-km resolution"](https://www.nature.com/articles/sdata2018214.pdf).
 
