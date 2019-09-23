@@ -106,7 +106,7 @@ class SlopeLookup:
        into the buckets defined in GAEZ 3.0.
     """
 
-    gaez_slopes = ["0–0.5%", "0.5–2%", "2–5%", "5–8%", "8–16%", "16–30%", "30–45%", ">45%"]
+    gaez_slopes = ["0-0.5%", "0.5-2%", "2-5%", "5-8%", "8-16%", "16-30%", "30-45%", ">45%"]
 
     def get_index(self, label):
         if label == 255:
