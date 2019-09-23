@@ -1,5 +1,5 @@
 # Extract counts of each Köppen-Geiger class for each country, exported to CSV.
-import collections
+import argparse
 import math
 import os.path
 import pdb
@@ -10,6 +10,7 @@ import tempfile
 import osgeo.gdal
 import osgeo.gdal_array
 import osgeo.ogr
+import numpy as np
 import pandas as pd
 
 import admin_names
@@ -56,6 +57,10 @@ class KGlookup:
     def get_columns(self):
         return self.kg_colors.values()
 
+    def get_counts(self, row):
+        u, c = np.unique(row, return_counts=True)
+        return zip(u, c)
+
 
 class LClookup:
     """Pixel color to Land Cover class in ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif
@@ -89,6 +94,32 @@ class LClookup:
         return [10, 11, 12, 20, 30, 40, 50, 60, 61, 62, 70, 71, 72, 80, 81, 82, 90, 100, 110,
                 120, 121, 122, 130, 140, 150, 151, 152, 153, 160, 170, 180, 190, 200, 201, 202,
                 210, 220]
+
+    def get_counts(self, row):
+        u, c = np.unique(row, return_counts=True)
+        return zip(u, c)
+
+
+class SlopeLookup:
+    """Geomorpho90m slope file dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif
+       has been pre-processed with classify_geomorpho90m_slope.py to classify slope values
+       into the buckets defined in GAEZ 3.0.
+    """
+
+    gaez_slopes = ["0–0.5%", "0.5–2%", "2–5%", "5–8%", "8–16%", "16–30%", "30–45%", ">45%"]
+
+    def get_index(self, label):
+        if label == 255:
+            return None
+        return self.gaez_slopes[label]
+
+    def get_columns(self):
+        """Return list of GAEZ slope classes."""
+        return self.gaez_slopes
+
+    def get_counts(self, row):
+        u, c = np.unique(row, return_counts=True)
+        return zip(u, c)
 
 
 def start_pdb(sig, frame):
@@ -136,8 +167,7 @@ def update_df_from_image(filename, admin, lookupobj, df):
         ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y)) +
                 (0.001175 * math.cos(4 * y)))
         km2 = xlen * ylen
-        counts = collections.Counter(row)
-        for (label, count) in counts.items():
+        for (label, count) in lookupobj.get_counts(row):
             idx = lookupobj.get_index(label)
             if idx is None:
                 continue
@@ -175,31 +205,64 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
+
+    parser = argparse.ArgumentParser(description='Videos to images')
+    parser.add_argument('--lc', default=False, required=False,
+                        action='store_true', help='process land cover')
+    parser.add_argument('--kg', default=False, required=False,
+                        action='store_true', help='process Köppen-Geiger')
+    parser.add_argument('--sl', default=False, required=False,
+                        action='store_true', help='process slope')
+    parser.add_argument('--all', default=False, required=False,
+                        action='store_true', help='process all')
+    args = parser.parse_args()
+
+    processed = False
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
 
-    mapfilename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
-    csvfilename = 'Land-Cover-by-country.csv'
-    print(mapfilename)
-    lookupobj = LClookup()
-    process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                csvfilename=csvfilename)
-    print('\n')
+    if args.lc or args.all:
+        mapfilename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
+        csvfilename = 'Land-Cover-by-country.csv'
+        print(mapfilename)
+        lookupobj = LClookup()
+        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                    csvfilename=csvfilename)
+        print('\n')
+        processed = True
 
-    sys.exit(0)
+    if args.kg or args.all:
+        mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
+        csvfilename = 'Köppen-Geiger-present-by-country.csv'
+        print(mapfilename)
+        ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
+        lookupobj = KGlookup(ctable)
+        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                    csvfilename=csvfilename)
+        print('\n')
 
-    mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
-    csvfilename = 'Köppen-Geiger-present-by-country.csv'
-    print(mapfilename)
-    ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
-    lookupobj = KGlookup(ctable)
-    process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                csvfilename=csvfilename)
-    print('\n')
+        mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
+        csvfilename = 'Köppen-Geiger-future-by-country.csv'
+        print(mapfilename)
+        ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
+        lookupobj = KGlookup(ctable)
+        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                    csvfilename=csvfilename)
+        print('\n')
+        processed = True
 
-    mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
-    csvfilename = 'Köppen-Geiger-future-by-country.csv'
-    print(mapfilename)
-    ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
-    lookupobj = KGlookup(ctable)
-    process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                csvfilename=csvfilename)
+    if args.sl or args.all:
+        mapfilename = 'data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif'
+        csvfilename = 'Slope-by-country.csv'
+        print(mapfilename)
+        lookupobj = SlopeLookup()
+        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                    csvfilename=csvfilename)
+        print('\n')
+        processed = True
+
+    if not processed:
+        print('Select one of:')
+        print('\t-lc : Land Cover')
+        print('\t-kg : Köppen-Geiger')
+        print('\t-sl : Slope')
+        print('\t-all')
