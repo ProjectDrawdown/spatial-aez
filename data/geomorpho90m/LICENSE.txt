@@ -1,0 +1,11 @@
+Paper and data licensed under CC BY 4.0 Open Access, see https://peerj.com/preprints/27595.pdf in the footer.
+Private email with the corresponding author confirmed that the data is also CC BY 4.0 Open Access.
+
+The original Geomorpho90m data is not checked in to this repository, as it is 5GB in size and exceeds the file
+size limit for GitHub repositories. data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif
+was derived from dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif available at
+https://drive.google.com/drive/folders/1D4YHUycBBhNFVVsz4ohaJI7QXV9BEh94 in the
+geomorphometry_pangaea250m_wgs84 folder.
+
+data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif is made available under the same
+license and with the same terms as the original dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif file.
