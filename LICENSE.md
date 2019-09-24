@@ -13,5 +13,5 @@ Data in this repository comes from other sources and carries the licenses assign
 1. data/ucl\_elie  
    Requires attribution, see data/ucl\_elie/LICENSE.txt or the author's site at [http://maps.elie.ucl.ac.be/CCI/viewer/download.php](http://maps.elie.ucl.ac.be/CCI/viewer/download.php).
 
-1. data/geomorpho90m
+1. data/geomorpho90m  
    Requires attribution, see data/geomorpho90m/LICENSE.txt.
