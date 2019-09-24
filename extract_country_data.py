@@ -47,7 +47,7 @@ class KGlookup:
         self.ctable = ctable
 
     def get_index(self, label):
-        r, g, b, a = ctable.GetColorEntry(int(label))
+        r, g, b, a = self.ctable.GetColorEntry(int(label))
         color = (r, g, b)
         if color == (255, 255, 255):
             # blank pixel == masked off, just skip it.
