@@ -145,8 +145,7 @@ def one_feature_shapefile(mapfilename, a3, idx, feature, tmpdir, srs):
 
     # Apply shapefile as a mask, and crop to the size of the mask
     clippedfile = os.path.join(tmpdir, f'{a3}_{idx}_feature.tif')
-    result = osgeo.gdal.Warp(clippedfile, mapfilename, cutlineDSName=shpfile, cropToCutline=True,
-            warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE'])
+    result = osgeo.gdal.Warp(clippedfile, mapfilename, cutlineDSName=shpfile, cropToCutline=True)
     if result is not None:
         return clippedfile
 
@@ -234,7 +233,8 @@ if __name__ == '__main__':
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
         csvfilename = 'Köppen-Geiger-present-by-country.csv'
         print(mapfilename)
-        ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
+        img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
+        ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
         process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                     csvfilename=csvfilename)
@@ -243,7 +243,8 @@ if __name__ == '__main__':
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
         csvfilename = 'Köppen-Geiger-future-by-country.csv'
         print(mapfilename)
-        ctable = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly).GetRasterBand(1).GetColorTable()
+        img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
+        ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
         process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                     csvfilename=csvfilename)
