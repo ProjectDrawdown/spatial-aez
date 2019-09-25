@@ -1,4 +1,4 @@
-pygdal>=3.0.1
+GDAL>=3.0.1
 numpy>=1.16.4
 pandas>=0.25.0rc0
 pytest>=5.0.0
