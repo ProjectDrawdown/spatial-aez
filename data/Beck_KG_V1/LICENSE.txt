@@ -1,4 +1,6 @@
 From http://www.gloh2o.org/koppen/ at the time the data was downloaded:
 
 Please cite the following paper when using the maps in any publication:
-Beck, H.E., N.E. Zimmermann, T.R. McVicar, N. Vergopolan, A. Berg, E.F. Wood: Present and future Köppen-Geiger climate classification maps at 1‑km resolution, Scientific Data 5:180214, doi:10.1038/sdata.2018.214 (2018).
+  Beck, H.E., N.E. Zimmermann, T.R. McVicar, N. Vergopolan, A. Berg, E.F. Wood:
+  Present and future Köppen-Geiger climate classification maps at 1‑km resolution,
+  Scientific Data 5:180214, doi:10.1038/sdata.2018.214 (2018).

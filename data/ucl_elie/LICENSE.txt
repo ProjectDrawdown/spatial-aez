@@ -1,11 +1,21 @@
 From http://maps.elie.ucl.ac.be/CCI/viewer/download.php at the time the data was downloaded:
 
 Terms of use
-The present products are made available to the public by ESA and the consortium. You may use one or several CCI-LC products land cover map for educational and/or scientific purposes, without any fee on the condition that you credit the ESA Climate Change Initiative and in particular its Land Cover project as the source of the CCI-LC database:
+The present products are made available to the public by ESA and the consortium.
+You may use one or several CCI-LC products land cover map for educational and/or
+scientific purposes, without any fee on the condition that you credit the ESA
+Climate Change Initiative and in particular its Land Cover project as the source
+of the CCI-LC database:
 
 Copyright notice:
 
 © ESA Climate Change Initiative - Land Cover led by UCLouvain (2017)
-Should you write any scientific publication on the results of research activities that use one or several CCI-LC products as input, you shall acknowledge the ESA CCI Land Cover project in the text of the publication and provide the project with an electronic copy of the publication (contact@esa-landcover-cci.org).
+Should you write any scientific publication on the results of research activities
+that use one or several CCI-LC products as input, you shall acknowledge the ESA
+CCI Land Cover project in the text of the publication and provide the project
+with an electronic copy of the publication (contact@esa-landcover-cci.org).
 
-If you wish to use one or several CCI-LC products in advertising or in any commercial promotion, you shall acknowledge the ESA CCI Land Cover project and you must submit the layout to the project for approval beforehand (contact@esa-landcover-cci.org).
+If you wish to use one or several CCI-LC products in advertising or in any
+commercial promotion, you shall acknowledge the ESA CCI Land Cover project
+and you must submit the layout to the project for approval beforehand
+(contact@esa-landcover-cci.org).
