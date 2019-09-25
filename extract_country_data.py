@@ -154,11 +154,11 @@ def update_df_from_image(filename, admin, lookupobj, df):
     """Count classes by pixel, add to df."""
     img = osgeo.gdal.Open(filename, osgeo.gdal.GA_ReadOnly)
     xmin, xsiz, xrot, ymin, yrot, ysiz = img.GetGeoTransform()
-    img = None
-    arr = osgeo.gdal_array.LoadFile(filename)
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
-    for row in arr:
+    band = img.GetRasterBand(1)
+    for yoff in range(0, band.YSize):
+        data = band.ReadAsArray(0, yoff, band.XSize, 1)
         # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
         xlen = abs(xsiz) * (math.cos(y) * math.pi * 6378.137 /
                 (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
@@ -166,7 +166,7 @@ def update_df_from_image(filename, admin, lookupobj, df):
         ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y)) +
                 (0.001175 * math.cos(4 * y)))
         km2 = xlen * ylen
-        for (label, count) in lookupobj.get_counts(row):
+        for (label, count) in lookupobj.get_counts(data):
             idx = lookupobj.get_index(label)
             if idx is None:
                 continue
@@ -204,6 +204,7 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
+    os.environ['GDAL_CACHEMAX'] = '128'
 
     parser = argparse.ArgumentParser(description='Videos to images')
     parser.add_argument('--lc', default=False, required=False,
