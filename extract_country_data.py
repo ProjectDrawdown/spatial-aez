@@ -145,7 +145,8 @@ def one_feature_shapefile(mapfilename, a3, idx, feature, tmpdir, srs):
 
     # Apply shapefile as a mask, and crop to the size of the mask
     clippedfile = os.path.join(tmpdir, f'{a3}_{idx}_feature.tif')
-    result = osgeo.gdal.Warp(clippedfile, mapfilename, cutlineDSName=shpfile, cropToCutline=True)
+    result = osgeo.gdal.Warp(clippedfile, mapfilename, cutlineDSName=shpfile, cropToCutline=True,
+            warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE'])
     if result is not None:
         return clippedfile
 
@@ -154,12 +155,12 @@ def update_df_from_image(filename, admin, lookupobj, df):
     """Count classes by pixel, add to df."""
     img = osgeo.gdal.Open(filename, osgeo.gdal.GA_ReadOnly)
     xmin, xsiz, xrot, ymin, yrot, ysiz = img.GetGeoTransform()
+    img = None
+    arr = osgeo.gdal_array.LoadFile(filename)
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
-    band = img.GetRasterBand(1)
-    for yoff in range(0, band.YSize):
+    for row in arr:
         y1 = y - (yrad / 2)
-        data = band.ReadAsArray(0, yoff, band.XSize, 1)
         # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
         xlen = abs(xsiz) * (math.cos(y1) * math.pi * 6378.137 /
                 (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y1) ** 2))))
@@ -167,7 +168,7 @@ def update_df_from_image(filename, admin, lookupobj, df):
         ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y1)) +
                 (0.001175 * math.cos(4 * y1)))
         km2 = xlen * ylen
-        for (label, count) in lookupobj.get_counts(data):
+        for (label, count) in lookupobj.get_counts(row):
             idx = lookupobj.get_index(label)
             if idx is None:
                 continue
