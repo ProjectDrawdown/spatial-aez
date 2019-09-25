@@ -122,6 +122,23 @@ class SlopeLookup:
         return zip(u, c)
 
 
+class WorkabilityLookup:
+    """Workability TIF has been pre-processed, pixel values are workability class.
+    """
+
+    def get_index(self, label):
+        if label == 0:
+            return None
+        return label
+
+    def get_columns(self):
+        return range(1, 8)
+
+    def get_counts(self, row):
+        u, c = np.unique(row, return_counts=True)
+        return zip(u, c)
+
+
 def start_pdb(sig, frame):
     """Start PDB on a signal."""
     pdb.Pdb().set_trace(frame)
@@ -194,7 +211,7 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
             df.loc[admin] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(mapfilename=mapfilename, a3=a3, idx=idx,
-                feature=feature, tmpdir=tmpdirobj.name, srs=srs)
+                feature=feature, tmpdir="/tmp/debug1", srs=srs)
         if clippedfile:
             print(f"{admin:<41} #{a3}_{idx}")
             update_df_from_image(filename=clippedfile, admin=admin, lookupobj=lookupobj, df=df)
@@ -215,6 +232,8 @@ if __name__ == '__main__':
                         action='store_true', help='process Köppen-Geiger')
     parser.add_argument('--sl', default=False, required=False,
                         action='store_true', help='process slope')
+    parser.add_argument('--wk', default=False, required=False,
+                        action='store_true', help='process workability')
     parser.add_argument('--all', default=False, required=False,
                         action='store_true', help='process all')
     args = parser.parse_args()
@@ -263,6 +282,17 @@ if __name__ == '__main__':
                     csvfilename=csvfilename)
         print('\n')
         processed = True
+
+    if args.wk or args.all:
+        mapfilename = 'data/FAO/workability_FAO_sq7_10km.tif'
+        csvfilename = 'Workability-by-country.csv'
+        print(mapfilename)
+        lookupobj = WorkabilityLookup()
+        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                    csvfilename=csvfilename)
+        print('\n')
+        processed = True
+
 
     if not processed:
         print('Select one of:')
