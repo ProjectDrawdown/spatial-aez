@@ -158,13 +158,14 @@ def update_df_from_image(filename, admin, lookupobj, df):
     y = math.radians(ymin)
     band = img.GetRasterBand(1)
     for yoff in range(0, band.YSize):
+        y1 = y - (yrad / 2)
         data = band.ReadAsArray(0, yoff, band.XSize, 1)
         # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
-        xlen = abs(xsiz) * (math.cos(y) * math.pi * 6378.137 /
-                (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
+        xlen = abs(xsiz) * (math.cos(y1) * math.pi * 6378.137 /
+                (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y1) ** 2))))
         # https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
-        ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y)) +
-                (0.001175 * math.cos(4 * y)))
+        ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y1)) +
+                (0.001175 * math.cos(4 * y1)))
         km2 = xlen * ylen
         for (label, count) in lookupobj.get_counts(data):
             idx = lookupobj.get_index(label)
