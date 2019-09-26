@@ -57,10 +57,6 @@ class KGlookup:
     def get_columns(self):
         return self.kg_colors.values()
 
-    def get_counts(self, row):
-        u, c = np.unique(row, return_counts=True)
-        return zip(u, c)
-
 
 class LClookup:
     """Pixel color to Land Cover class in ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif
@@ -95,10 +91,6 @@ class LClookup:
                 120, 121, 122, 130, 140, 150, 151, 152, 153, 160, 170, 180, 190, 200, 201, 202,
                 210, 220]
 
-    def get_counts(self, row):
-        u, c = np.unique(row, return_counts=True)
-        return zip(u, c)
-
 
 class SlopeLookup:
     """Geomorpho90m slope file dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif
@@ -117,10 +109,6 @@ class SlopeLookup:
         """Return list of GAEZ slope classes."""
         return self.gaez_slopes
 
-    def get_counts(self, row):
-        u, c = np.unique(row, return_counts=True)
-        return zip(u, c)
-
 
 class WorkabilityLookup:
     """Workability TIF has been pre-processed, pixel values are workability class.
@@ -133,10 +121,6 @@ class WorkabilityLookup:
 
     def get_columns(self):
         return range(1, 8)
-
-    def get_counts(self, row):
-        u, c = np.unique(row, return_counts=True)
-        return zip(u, c)
 
 
 def start_pdb(sig, frame):
@@ -172,11 +156,11 @@ def update_df_from_image(filename, admin, lookupobj, df):
     """Count classes by pixel, add to df."""
     img = osgeo.gdal.Open(filename, osgeo.gdal.GA_ReadOnly)
     xmin, xsiz, xrot, ymin, yrot, ysiz = img.GetGeoTransform()
-    img = None
-    arr = osgeo.gdal_array.LoadFile(filename)
+    band = img.GetRasterBand(1)
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
-    for row in arr:
+    for yoff in range(0, int(band.YSize)):
+        row = band.ReadAsArray(0, yoff, int(band.XSize), 1)
         y1 = y - (yrad / 2)
         # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
         xlen = abs(xsiz) * (math.cos(y1) * math.pi * 6378.137 /
@@ -185,11 +169,12 @@ def update_df_from_image(filename, admin, lookupobj, df):
         ylen = abs(ysiz) * (111.132954 - (0.559822 * math.cos(2 * y1)) +
                 (0.001175 * math.cos(4 * y1)))
         km2 = xlen * ylen
-        for (label, count) in lookupobj.get_counts(row):
-            idx = lookupobj.get_index(label)
+        labels, counts = np.unique(row[0], return_counts=True)
+        for i in range(len(labels)):
+            idx = lookupobj.get_index(labels[i])
             if idx is None:
                 continue
-            df.loc[admin, idx] += (count * km2)
+            df.loc[admin, idx] += (counts[i] * km2)
         y -= yrad
 
 
