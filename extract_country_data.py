@@ -43,6 +43,8 @@ class KGlookup:
         (178, 178, 178): 'ET',  (102, 102, 102): 'EF',
         }
 
+    warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE']
+
     def __init__(self, ctable):
         self.ctable = ctable
 
@@ -79,6 +81,8 @@ class LClookup:
 
        So we don't need a lookup table, greyscale absolute values directly equal the LCCS class."""
 
+    warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE']
+
     def get_index(self, label):
         if label == 0:
             # black == no land cover (like water), just skip it.
@@ -98,6 +102,7 @@ class SlopeLookup:
        into the buckets defined in GAEZ 3.0.
     """
 
+    warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE']
     gaez_slopes = ["0-0.5%", "0.5-2%", "2-5%", "5-8%", "8-16%", "16-30%", "30-45%", ">45%"]
 
     def get_index(self, label):
@@ -114,6 +119,7 @@ class WorkabilityLookup:
     """Workability TIF has been pre-processed, pixel values are workability class.
     """
 
+    warpOptions = None
     def get_index(self, label):
         if label == 0:
             return None
@@ -128,7 +134,7 @@ def start_pdb(sig, frame):
     pdb.Pdb().set_trace(frame)
 
 
-def one_feature_shapefile(mapfilename, a3, idx, feature, tmpdir, srs):
+def one_feature_shapefile(mapfilename, a3, idx, feature, tmpdir, srs, warpOptions):
     """Make a new shapefile, to hold the one Feature we're looking at."""
     driver = osgeo.ogr.GetDriverByName("ESRI Shapefile")
     shpfile = os.path.join(tmpdir, f'{a3}_{idx}_feature_mask.shp')
@@ -147,7 +153,7 @@ def one_feature_shapefile(mapfilename, a3, idx, feature, tmpdir, srs):
     # Apply shapefile as a mask, and crop to the size of the mask
     clippedfile = os.path.join(tmpdir, f'{a3}_{idx}_feature.tif')
     result = osgeo.gdal.Warp(clippedfile, mapfilename, cutlineDSName=shpfile, cropToCutline=True,
-            warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE'])
+            warpOptions=warpOptions)
     if result is not None:
         return clippedfile
 
@@ -196,7 +202,8 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
             df.loc[admin] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(mapfilename=mapfilename, a3=a3, idx=idx,
-                feature=feature, tmpdir="/tmp/debug1", srs=srs)
+                feature=feature, tmpdir=tmpdirobj.name, srs=srs,
+                warpOptions=lookupobj.warpOptions)
         if clippedfile:
             print(f"{admin:<41} #{a3}_{idx}")
             update_df_from_image(filename=clippedfile, admin=admin, lookupobj=lookupobj, df=df)

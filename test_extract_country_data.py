@@ -21,17 +21,23 @@ def test_areas_reasonable():
             print(f"{country}: {area} expected={expected}")
             if expected < 2500 and area < 2500:
                 continue
-            elif 'workability' in filename.lower() and expected < 25000:
-                # FAO soil workability data omits a number of small countries, and is coarse
-                # enough to over-estimate a number of medium-sized countries. Just skip them,
-                # the errors are not enough to change conclusions.
-                continue
-            elif expected < 10000 and area < 10000:
-                margin = expected * 0.4
+            elif expected < 35000 and area < 35000:
+                if 'workability' in filename.lower():
+                    # FAO soil workability data omits a number of small countries, and is coarse
+                    # enough to over-estimate a number of medium-sized countries. Just skip them,
+                    # the errors are not enough to change conclusions.
+                    pass
+                else:
+                    assert area > (expected * 0.6)
+                    assert area < (expected * 1.20)
             else:
-                margin = expected * 0.2
-            assert area > (expected - margin)
-            assert area < (expected + margin)
+                if 'workability' in filename.lower() and country == 'Norway':
+                    # FAO data is old enough that it does not reflect the resolution of the
+                    # boundary dispute between Russia and Norway in 2010 which added substantial
+                    # Arctic territory to Norway. Just skip it.
+                    continue
+                assert area > (expected * 0.85)
+                assert area < (expected * 1.07)
         print("\n")
     assert num >= 4
 
@@ -189,7 +195,7 @@ expected_area = {
     "GUATEMALA": 108889,
     "GUERNSEY": 78,
     "GUINEA": 245857,
-    "GUINEA-BISSAU": 36125,
+    "GUINEA-BISSAU": 28120,  # 36125, https://en.wikipedia.org/wiki/Geography_of_Guinea-Bissau land area
     "GUYANA": 214969,
     "HAITI": 27750,
     "HEARD ISLAND AND MCDONALD ISLANDS": 412,
@@ -263,7 +269,7 @@ expected_area = {
     "NORTHERN MARIANA ISLANDS": 464,
     "NORWAY": 385203,   # 323802,  resolved Artic dispute added territory
     "OMAN": 309500,
-    "PAKISTAN": 796095,
+    "PAKISTAN": 881913,  # 796095, https://en.wikipedia.org/wiki/Pakistan
     "PALAU": 459,
     "PALESTINE": 6220,
     "PANAMA": 75420,
