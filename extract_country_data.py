@@ -202,15 +202,16 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
             df.loc[admin] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(mapfilename=mapfilename, a3=a3, idx=idx,
-                feature=feature, tmpdir=tmpdirobj.name, srs=srs,
+                feature=feature, tmpdir='/tmp/debug1', srs=srs,
                 warpOptions=lookupobj.warpOptions)
         if clippedfile:
-            print(f"{admin:<41} #{a3}_{idx}")
+            print(f"Processing {admin:<41} #{a3}_{idx}")
             update_df_from_image(filename=clippedfile, admin=admin, lookupobj=lookupobj, df=df)
         else:
-            print(f"{admin:<41} #{a3}_{idx} is empty, skipping.")
+            print(f"Skipping empty {admin:<41} #{a3}_{idx}")
 
-    df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
+    outputfilename = os.path.join('results', csvfilename)
+    df.sort_index(axis='index').to_csv(outputfilename, float_format='%.2f')
 
 
 if __name__ == '__main__':
@@ -291,4 +292,5 @@ if __name__ == '__main__':
         print('\t-lc : Land Cover')
         print('\t-kg : Köppen-Geiger')
         print('\t-sl : Slope')
+        print('\t-wk : Workability')
         print('\t-all')

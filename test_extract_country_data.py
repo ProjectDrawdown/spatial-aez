@@ -9,7 +9,7 @@ import extract_country_data as ecd
 
 def test_areas_reasonable():
     num = 0
-    for filename in glob.glob('*.csv'):
+    for filename in glob.glob('results/*.csv'):
         print(f"{filename}")
         num = num + 1
         df = pd.read_csv(filename).set_index('Country')
