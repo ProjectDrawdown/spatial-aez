@@ -202,7 +202,7 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
             df.loc[admin] = [0] * len(df.columns)
 
         clippedfile = one_feature_shapefile(mapfilename=mapfilename, a3=a3, idx=idx,
-                feature=feature, tmpdir='/tmp/debug1', srs=srs,
+                feature=feature, tmpdir=tmpdirobj.name, srs=srs,
                 warpOptions=lookupobj.warpOptions)
         if clippedfile:
             print(f"Processing {admin:<41} #{a3}_{idx}")
