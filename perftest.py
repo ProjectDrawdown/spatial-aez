@@ -36,6 +36,7 @@ def perf(filename):
     band = img.GetRasterBand(1)
     yrad = math.radians(abs(ysiz))
     y = math.radians(ymin)
+    print(f"{int(band.XSize)} {int(band.YSize)}")
     for yoff in range(0, int(band.YSize)):
         row = band.ReadAsArray(0, yoff, int(band.XSize), 1)
         y1 = y - (yrad / 2)
@@ -50,17 +51,16 @@ def perf(filename):
         _ = u.sum()
         _ = c.sum()
         y -= yrad
-        if yoff > 100:
-            return
 
 
-os.environ['GDAL_CACHEMAX'] = '128'
+os.environ['GDAL_CACHEMAX'] = '0'
 
-for filename in ['data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif',
-                 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif',
-                 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif',
-                 'data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif',
-                 'data/FAO/workability_FAO_sq7_10km.tif']:
+for filename in [#'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif',
+                 #'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif',
+                 #'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif',
+                 #'data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif',
+                 #'data/FAO/workability_FAO_sq7_10km.tif',
+                 'testdata/slope_MNG_cutfile.tif']:
     print(filename)
 
     start = time.monotonic()
@@ -72,3 +72,10 @@ for filename in ['data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif',
     orig(filename)
     end = time.monotonic()
     print(f"orig: {(end - start):02f}")
+
+    start = time.monotonic()
+    perf(filename)
+    end = time.monotonic()
+    print(f"perf: {(end - start):02f}")
+
+
