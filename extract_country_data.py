@@ -235,13 +235,25 @@ if __name__ == '__main__':
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
 
     if args.lc or args.all:
-        mapfilename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
-        csvfilename = 'Land-Cover-by-country.csv'
-        print(mapfilename)
-        lookupobj = LClookup()
-        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfilename)
-        print('\n')
+        land_cover_files = [
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2013-v2.0.7.tif', 'Land-Cover-by-country-2013.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2012-v2.0.7.tif', 'Land-Cover-by-country-2012.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2011-v2.0.7.tif', 'Land-Cover-by-country-2011.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7.tif', 'Land-Cover-by-country-2010.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2009-v2.0.7.tif', 'Land-Cover-by-country-2009.csv'),
+                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2008-v2.0.7.tif', 'Land-Cover-by-country-2008.csv')
+                ]
+        for (mapfilename, csvfilename) in land_cover_files:
+            if not os.path.exists(mapfilename):
+                print(f"Skipping missing {mapfilename}")
+                continue
+            print(mapfilename)
+            lookupobj = LClookup()
+            process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+                        csvfilename=csvfilename)
+            print('\n')
         processed = True
 
     if args.kg or args.all:
