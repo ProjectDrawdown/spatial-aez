@@ -20,6 +20,7 @@ pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 40)
 pd.options.display.float_format = '{:.2f}'.format
 osgeo.gdal.PushErrorHandler("CPLQuietErrorHandler")
+np.set_printoptions(threshold=sys.maxsize)
 
 
 
@@ -49,9 +50,11 @@ class KGlookup:
         self.ctable = ctable
 
     def get_index(self, label):
+        if int(label) < 0:
+            return None
         r, g, b, a = self.ctable.GetColorEntry(int(label))
         color = (r, g, b)
-        if color == (255, 255, 255):
+        if color == (255, 255, 255) or color == (0, 0, 0):
             # blank pixel == masked off, just skip it.
             return None
         return self.kg_colors[color]
@@ -214,6 +217,72 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
     df.sort_index(axis='index').to_csv(outputfilename, float_format='%.2f')
 
 
+def process_map_with_masks(shapefilename, mapfilename, lookupobj, csvfilename):
+    tmpdirobj = tempfile.TemporaryDirectory()
+    df = pd.DataFrame(columns=lookupobj.get_columns(), dtype=float)
+    df.index.name = 'Country'
+    img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
+    imgband = img.GetRasterBand(1)
+    shapefile = osgeo.ogr.Open(shapefilename)
+    assert shapefile.GetLayerCount() == 1
+    layer = shapefile.GetLayerByIndex(0)
+
+    for idx, feature in enumerate(layer):
+        admin = admin_names.lookup(feature.GetField("ADMIN"))
+        if admin is None:
+            continue
+        a3 = feature.GetField("SOV_A3")
+        if admin not in df.index:
+            df.loc[admin] = [0] * len(df.columns)
+
+        print(f"Processing {admin:<41} #{a3}_{idx}")
+        maskfilename = f"masks/{a3}_{idx}_1km_mask._tif"
+        maskimg = osgeo.gdal.Open(maskfilename, osgeo.gdal.GA_ReadOnly)
+        x_mindeg, x_sizdeg, x_rot, y_mindeg, y_rotdeg, y_sizdeg = maskimg.GetGeoTransform()
+        yrad = math.radians(abs(y_sizdeg))
+        maskband = maskimg.GetRasterBand(1)
+        x_siz = maskband.XSize
+        y_siz = maskband.YSize
+        x_blksiz, y_blksiz = maskband.GetBlockSize()
+        for y_off in range(0, y_siz, y_blksiz):
+            if y_off + y_blksiz < y_siz:
+                rows = y_blksiz
+            else:
+                rows = y_siz - y_off
+            for x_off in range(0, x_siz, x_blksiz):
+                if x_off + x_blksiz < x_siz:
+                    cols = x_blksiz
+                else:
+                    cols = x_siz - x_off
+
+                (flags, pct) = maskband.GetDataCoverageStatus(x_off, y_off, cols, rows)
+                if flags == osgeo.gdal.GDAL_DATA_COVERAGE_STATUS_EMPTY and pct == 0.0:
+                    # sparse hole in image, no data to process
+                    continue
+
+                block = imgband.ReadAsArray(x_off, y_off, cols, rows)
+                mask = maskband.ReadAsArray(x_off, y_off, cols, rows)
+                km2 = np.empty((rows, cols))
+                y = math.radians(y_mindeg + (y_off * y_sizdeg)) - (yrad / 2)
+                for i in range(rows):
+                    # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
+                    xlen = abs(x_sizdeg) * (math.cos(y) * math.pi * 6378.137 /
+                            (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
+                    # https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
+                    ylen = abs(y_sizdeg) * (111.132954 - (0.559822 * math.cos(2 * y)) +
+                            (0.001175 * math.cos(4 * y)))
+                    km2[i, :] = xlen * ylen
+                    y -= yrad
+                masked = np.ma.masked_array(block, mask=np.logical_not(mask)).filled(-1)
+                for label in np.unique(masked):
+                    typ = lookupobj.get_index(label)
+                    if typ is None:
+                        continue
+                    df.loc[admin, typ] += km2[masked == label].sum()
+    outputfilename = os.path.join('results', csvfilename)
+    df.sort_index(axis='index').to_csv(outputfilename, float_format='%.2f')
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
@@ -263,7 +332,7 @@ if __name__ == '__main__':
         img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
         ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
-        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+        process_map_with_masks(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                     csvfilename=csvfilename)
         print('\n')
 
@@ -273,7 +342,7 @@ if __name__ == '__main__':
         img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
         ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
-        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
+        process_map_with_masks(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                     csvfilename=csvfilename)
         print('\n')
         processed = True
