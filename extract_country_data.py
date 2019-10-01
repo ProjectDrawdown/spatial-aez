@@ -63,7 +63,7 @@ class KGlookup:
         return self.kg_colors.values()
 
 
-class LClookup:
+class ESA_LC_lookup:
     """Pixel color to Land Cover class in ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif
 
        There are legends of LCCS<->color swatch in both
@@ -97,6 +97,29 @@ class LClookup:
         return [10, 11, 12, 20, 30, 40, 50, 60, 61, 62, 70, 71, 72, 80, 81, 82, 90, 100, 110,
                 120, 121, 122, 130, 140, 150, 151, 152, 153, 160, 170, 180, 190, 200, 201, 202,
                 210, 220]
+
+
+
+class FAO_LC_lookup:
+    """Pixel color to Land Cover class in 
+    """
+
+    warpOptions = ['CUTLINE_ALL_TOUCHED=TRUE']
+    land_covers = {1: 'Artificial Surfaces', 2: 'Cropland', 3: 'Grassland',
+            4: 'Tree Covered Areas', 5: 'Shrubs Covered Areas',
+            6: 'Herbaceous vegetation, aquatic or regularly flooded',
+            7: 'Mangroves', 8: 'Sparse vegetation', 9: 'Baresoil', 10: 'Snow and glaciers',
+            11: 'Waterbodies'}
+
+    def get_index(self, label):
+        if label == 0 or label == 255:
+            # black == no land cover (like water), just skip it.
+            return None
+        return self.land_covers[label]
+
+    def get_columns(self):
+        """Return list of LCCS classes present in this dataset."""
+        return self.land_covers.values()
 
 
 class SlopeLookup:
@@ -217,7 +240,40 @@ def process_map(shapefilename, mapfilename, lookupobj, csvfilename):
     df.sort_index(axis='index').to_csv(outputfilename, float_format='%.2f')
 
 
-def process_map_with_masks(shapefilename, mapfilename, lookupobj, csvfilename):
+def km2_block(nrows, ncols, y_off, img):
+    """Return (nrows,ncols) numpy array of pixel area in sq km."""
+    x_mindeg, x_sizdeg, x_rot, y_mindeg, y_rotdeg, y_sizdeg = img.GetGeoTransform()
+    yrad = math.radians(abs(y_sizdeg))
+    km2 = np.empty((nrows, ncols))
+    y = math.radians(y_mindeg + (y_off * y_sizdeg)) - (yrad / 2)
+    for i in range(nrows):
+        # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
+        xlen = abs(x_sizdeg) * (math.cos(y) * math.pi * 6378.137 /
+                (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
+        # https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
+        ylen = abs(y_sizdeg) * (111.132954 - (0.559822 * math.cos(2 * y)) +
+                (0.001175 * math.cos(4 * y)))
+        km2[i, :] = xlen * ylen
+        y -= yrad
+    return km2
+
+
+def is_sparse(band, x, y, ncols, nrows):
+    """Return True if the given coordinates are a sparse hole in the image."""
+    (flags, pct) = band.GetDataCoverageStatus(x, y, ncols, nrows)
+    if flags == osgeo.gdal.GDAL_DATA_COVERAGE_STATUS_EMPTY and pct == 0.0:
+        return True
+
+
+def blklim(coord, blksiz, totsiz):
+    if (coord + blksiz) < totsiz:
+        return blksiz
+    else:
+        return totsiz - coord
+
+
+def process_map_with_masks(mapfilename, lookupobj, csvfilename):
+    shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     tmpdirobj = tempfile.TemporaryDirectory()
     df = pd.DataFrame(columns=lookupobj.get_columns(), dtype=float)
     df.index.name = 'Country'
@@ -238,41 +294,21 @@ def process_map_with_masks(shapefilename, mapfilename, lookupobj, csvfilename):
         print(f"Processing {admin:<41} #{a3}_{idx}")
         maskfilename = f"masks/{a3}_{idx}_1km_mask._tif"
         maskimg = osgeo.gdal.Open(maskfilename, osgeo.gdal.GA_ReadOnly)
-        x_mindeg, x_sizdeg, x_rot, y_mindeg, y_rotdeg, y_sizdeg = maskimg.GetGeoTransform()
-        yrad = math.radians(abs(y_sizdeg))
         maskband = maskimg.GetRasterBand(1)
         x_siz = maskband.XSize
         y_siz = maskband.YSize
         x_blksiz, y_blksiz = maskband.GetBlockSize()
-        for y_off in range(0, y_siz, y_blksiz):
-            if y_off + y_blksiz < y_siz:
-                rows = y_blksiz
-            else:
-                rows = y_siz - y_off
-            for x_off in range(0, x_siz, x_blksiz):
-                if x_off + x_blksiz < x_siz:
-                    cols = x_blksiz
-                else:
-                    cols = x_siz - x_off
-
-                (flags, pct) = maskband.GetDataCoverageStatus(x_off, y_off, cols, rows)
-                if flags == osgeo.gdal.GDAL_DATA_COVERAGE_STATUS_EMPTY and pct == 0.0:
+        for y in range(0, y_siz, y_blksiz):
+            nrows = blklim(coord=y, blksiz=y_blksiz, totsiz=y_siz)
+            for x in range(0, x_siz, x_blksiz):
+                ncols = blklim(coord=x, blksiz=x_blksiz, totsiz=x_siz)
+                if is_sparse(band=maskband, x=x, y=y, ncols=ncols, nrows=nrows):
                     # sparse hole in image, no data to process
                     continue
 
-                block = imgband.ReadAsArray(x_off, y_off, cols, rows)
-                mask = maskband.ReadAsArray(x_off, y_off, cols, rows)
-                km2 = np.empty((rows, cols))
-                y = math.radians(y_mindeg + (y_off * y_sizdeg)) - (yrad / 2)
-                for i in range(rows):
-                    # https://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
-                    xlen = abs(x_sizdeg) * (math.cos(y) * math.pi * 6378.137 /
-                            (180 * math.sqrt(1 - 0.00669437999014 * (math.sin(y) ** 2))))
-                    # https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
-                    ylen = abs(y_sizdeg) * (111.132954 - (0.559822 * math.cos(2 * y)) +
-                            (0.001175 * math.cos(4 * y)))
-                    km2[i, :] = xlen * ylen
-                    y -= yrad
+                block = imgband.ReadAsArray(x, y, ncols, nrows)
+                mask = maskband.ReadAsArray(x, y, ncols, nrows)
+                km2 = km2_block(nrows=nrows, ncols=ncols, y_off=y, img=maskimg)
                 masked = np.ma.masked_array(block, mask=np.logical_not(mask)).filled(-1)
                 for label in np.unique(masked):
                     typ = lookupobj.get_index(label)
@@ -304,6 +340,14 @@ if __name__ == '__main__':
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
 
     if args.lc or args.all:
+        mapfilename = 'data/FAO/glc_shv10_dominant_landcover.tif'
+        csvfilename = 'FAO-Land-Cover-by-country.csv'
+        print(mapfilename)
+        lookupobj = FAO_LC_lookup()
+        process_map_with_masks(mapfilename=mapfilename, lookupobj=lookupobj, csvfilename=csvfilename)
+        print('\n')
+        sys.exit(0)
+
         land_cover_files = [
                 ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country.csv'),
                 ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),
@@ -319,7 +363,7 @@ if __name__ == '__main__':
                 print(f"Skipping missing {mapfilename}")
                 continue
             print(mapfilename)
-            lookupobj = LClookup()
+            lookupobj = ESA_LC_lookup()
             process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                         csvfilename=csvfilename)
             print('\n')
@@ -332,8 +376,7 @@ if __name__ == '__main__':
         img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
         ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
-        process_map_with_masks(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfilename)
+        process_map_with_masks(mapfilename=mapfilename, lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
 
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
@@ -342,8 +385,7 @@ if __name__ == '__main__':
         img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
         ctable = img.GetRasterBand(1).GetColorTable()
         lookupobj = KGlookup(ctable)
-        process_map_with_masks(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfilename)
+        process_map_with_masks(mapfilename=mapfilename, lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 

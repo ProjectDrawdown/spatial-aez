@@ -1,3 +1,4 @@
+workability_FAO_sq7_10km.tif
 From http://webarchive.iiasa.ac.at/Research/LUC/External-World-soil-database/HTML/index.html
 at the time the data was downloaded:
 
@@ -14,3 +15,41 @@ of the material contained in the Harmonized World Soil Database, as follows:
 Citation
   FAO/IIASA/ISRIC/ISSCAS/JRC, 2012. Harmonized World Soil Database (version 1.2).
   FAO, Rome, Italy and IIASA, Laxenburg, Austria.
+
+
+
+glc_shv10_DOM.Tif
+From http://www.fao.org/geonetwork/srv/en/main.home?uuid=ba4526fd-cdbf-4028-a1bd-5a559c4bff38
+at the time the data was downloaded.
+Access constraints
+  Copyright: Exclusive right to the publication, production, or sale of the
+  rights to a literary, dramatic, musical, or artistic work, or to the use of
+  a commercial print or label, granted by law for a specified period of time
+  to an author, composer, artist, distributor
+Use constraints
+  Copyright: Exclusive right to the publication, production, or sale of the
+  rights to a literary, dramatic, musical, or artistic work, or to the use of
+  a commercial print or label, granted by law for a specified period of time
+  to an author, composer, artist, distributor
+Other constraints
+  Reproduction and dissemination of material contained in GLC-SHARE Beta-Release
+  v1.0 or educational, research, personal or other noncommercial purposes are
+  authorized without any prior written permission from the copyright holders,
+  provided FAO are fully acknowledged. No part of GLC-SHARE Beta-Release v1.0
+  data may be downloaded, stored in a retrieval system or transmitted by any
+  means for resale or other commercial purposes without written permission of
+  the copyright holders. If any information or resources on this site are
+  attributed to a site or source external to FAO permission to use must be
+  sought with FAO.
+Other constraints
+  The designations employed and the presentation of material in this information
+  product do not imply the expression of any opinion whatsoever on the part of
+  the Food and Agriculture Organization of the United Nations (FAO) concerning
+  the legal or development status of any country, territory, city or area or of
+  its authorities, or concerning the delimitation of its frontiers or boundaries.
+  FAO declines all responsibility for errors or deficiencies in the database or
+  software or in the documentation accompanying it, for program maintenance and
+  upgrading as well as for any damage that may arise from them. FAO also declines
+  any responsibility for updating the data and assumes no responsibility for
+  errors and omissions in the data provided. Users are, however, kindly asked to
+  report any errors or deficiencies in this product to FAO.

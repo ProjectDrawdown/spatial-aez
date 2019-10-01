@@ -18,3 +18,5 @@ Data in this repository comes from other sources and carries the licenses assign
 
 1. data/FAO  
    Requires attribution, see data/FAO/LICENSE.txt.
+   Land Cover FAO data allows non-commercial use without prior permission, commercial
+   use must contact FAO.

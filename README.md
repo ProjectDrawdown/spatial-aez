@@ -23,6 +23,9 @@ Data comes from the [European Space Agency Climate Change Initiative](http://map
 [Land Cover GeoTIFF](https://storage.googleapis.com/cci-lc-v207/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.zip) retrieved 19 Sep 2019.
 
 
+Another data source comes from the [United Nations Food and Agriculture Organization](http://www.fao.org/geonetwork/srv/en/main.home?uuid=ba4526fd-cdbf-4028-a1bd-5a559c4bff38), retrieved 9/30/2019.
+
+
 ### Slope
 Data comes from [Geomorpho90m](https://peerj.com/preprints/27595/), which is generated from [MERIT-DEM data](http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/).
 
