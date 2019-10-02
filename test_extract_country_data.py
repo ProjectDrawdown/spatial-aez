@@ -45,7 +45,7 @@ def test_areas_reasonable():
     assert num >= 4
 
 
-def test_land_cover_vs_excel():
+def test_land_cover_country_excel():
     df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
     regional = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
         'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
@@ -103,6 +103,56 @@ def test_land_cover_vs_excel():
         # Not accounted for:
         # Shrubs Covered Areas,"Herbaceous vegetation, aquatic or regularly flooded",Baresoil,Snow and glaciers
         # expected = gaez.loc[country, "Barren Land"]
+
+
+def test_land_cover_regions_excel():
+    df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
+    gaez = pd.DataFrame(gaez_land_areas[1:], columns=gaez_land_areas[0]).set_index('Country')
+    fao_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
+        'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
+        columns=df.columns.copy())
+    gaez_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
+        'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
+        columns=gaez.columns.copy())
+
+    for country, row in df.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            fao_region.loc[region, :] += row
+    for country, row in gaez.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            total = gaez.loc[country, "All Classes"]
+
+            percent = gaez.loc[country, "Forest Land"] / 100.0
+            gaez_region.loc[region, "Forest Land"] += (percent * total)
+
+            percent = gaez.loc[country, "Grassland"] / 100.0
+            gaez_region.loc[region, "Grassland"] += (percent * total)
+
+            percent = gaez.loc[country, "Irrigated Cultivated Land"] / 100.0
+            gaez_region.loc[region, "Irrigated Cultivated Land"] += (percent * total)
+
+            percent = gaez.loc[country, "Rainfed Cultivated Land"] / 100.0
+            gaez_region.loc[region, "Rainfed Cultivated Land"] += (percent * total)
+
+    for region in gaez_region.index:
+        expected = gaez_region.loc[region, "Forest Land"]
+        actual = fao_region.loc[region, "Tree Covered Areas"]
+        assert actual > expected * 0.6
+        assert actual < expected * 1.5
+
+        expected = gaez_region.loc[region, "Grassland"]
+        actual = (fao_region.loc[region, "Grassland"] + fao_region.loc[region, "Sparse vegetation"] +
+                fao_region.loc[region, "Baresoil"])
+        assert actual > expected * 0.3
+        assert actual < expected * 1.7
+
+        expected = (gaez_region.loc[region, "Irrigated Cultivated Land"] +
+                gaez_region.loc[region, "Rainfed Cultivated Land"])
+        actual = fao_region.loc[region, "Cropland"]
+        assert actual > expected * 0.8
+        assert actual < expected * 1.9
 
 
 def test_kg():
@@ -579,6 +629,7 @@ region_mapping = {
     "Kiribati": None,
     "Korea": ["Asia (Sans Japan)"],
     "Republic of Korea (South Korea)": ["Asia (Sans Japan)"],
+    "Republic of Korea": ["Asia (Sans Japan)"],
     "Korea, Republic of": ["Asia (Sans Japan)"],
     "South Korea": ["Asia (Sans Japan)"],
     "Kosovo": ["Eastern Europe"],
