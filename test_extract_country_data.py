@@ -45,7 +45,7 @@ def test_areas_reasonable():
     assert num >= 4
 
 
-def test_land_cover_country_excel():
+def test_country_land_cover_vs_excel():
     df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
     regional = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
         'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
@@ -105,7 +105,7 @@ def test_land_cover_country_excel():
         # expected = gaez.loc[country, "Barren Land"]
 
 
-def test_land_cover_regions_excel():
+def test_regional_land_cover_vs_excel_fao():
     df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
     gaez = pd.DataFrame(gaez_land_areas[1:], columns=gaez_land_areas[0]).set_index('Country')
     fao_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
@@ -155,6 +155,39 @@ def test_land_cover_regions_excel():
         assert actual < expected * 1.9
 
 
+@pytest.mark.skip(reason="still developing this test's asserts")
+def test_world_land_cover_vs_excel_esa():
+    df = pd.read_csv('results/Land-Cover-by-country.csv').set_index('Country')
+    df.columns = df.columns.astype(int)
+    forest = grassland = shrubland = cropland = 0
+    for country, row in df.iterrows():
+        #forest += row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
+        forest += row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
+        forest += row[80] + row[81] + row[82] + row[90] + row[160] + row[170]
+        shrubland += row[40] + row[100] + row[110] + row[120] + row[121] + row[122] + row[180]
+        shrubland += row[12]
+        grassland += row[11] + row[130] + row[150] + row[151] + row[152] + row[153]
+        cropland += row[10] + row[20] + row[30]
+
+    print(f"forest: {forest} grassland: {grassland} shrubland: {shrubland} cropland: {cropland}")
+    assert False
+
+
+@pytest.mark.skip(reason="still developing this test's asserts")
+def test_world_land_cover_vs_excel_fao():
+    df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
+    forest = grassland = shrubland = cropland = 0
+    for country, row in df.iterrows():
+        #forest += row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
+        forest += row["Tree Covered Areas"]
+        shrubland += row["Shrubs Covered Areas"]
+        grassland += row["Grassland"] + row["Sparse vegetation"]
+        cropland += row["Cropland"]
+
+    print(f"forest: {forest} grassland: {grassland} shrubland: {shrubland} cropland: {cropland}")
+    assert False
+
+
 def test_kg():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p5.tif'
@@ -173,7 +206,7 @@ def test_kg():
 def test_lc():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/ucl_elie/test_small.tif'
-    lookupobj = ecd.LClookup()
+    lookupobj = ecd.ESA_LC_lookup()
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
     ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
