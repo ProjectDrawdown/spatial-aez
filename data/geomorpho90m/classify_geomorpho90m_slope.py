@@ -6,6 +6,9 @@ out_xmin, out_xsiz, _, out_ymin, _, out_ysiz = out.GetGeoTransform()
 
 f = open('slope_files.txt', 'r')
 for filename in f:
+    if filename.strip().startswith('#'):
+        print(f"{filename.strip()} : skipping")
+        continue
     print(filename.strip())
     slp = gdal.Open(filename.strip(), gdal.GA_ReadOnly)
     slp_band = slp.GetRasterBand(1)
@@ -27,7 +30,7 @@ for filename in f:
         out_y = int(slp_y / 10)
         for slp_x in range(0, slp_x_siz, slp_x_blksiz):
             data = slp_band.ReadAsArray(slp_x, slp_y, slp_x_blksiz, slp_y_blksiz)
-            for m in range(slp_x, int(slp_x_blksiz/10)):
+            for m in range(slp_x, slp_x+slp_x_blksiz, 10):
                 out_x = int(m / 10)
                 mdata = data[m:m+10, slp_y:slp_y+10]
                 outband1[out_x, out_y] = np.sum(np.logical_and(mdata >= 0, mdata < 50))
