@@ -1151,3 +1151,6 @@ wget --user=USERNAME --password=PASSWORD http://hydro.iis.u-tokyo.ac.jp/~yamadai
 wget --user=USERNAME --password=PASSWORD http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/distribute/v1.0.2/5deg/s55e070_dem.tif
 wget --user=USERNAME --password=PASSWORD http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/distribute/v1.0.2/5deg/s55e155_dem.tif
 wget --user=USERNAME --password=PASSWORD http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/distribute/v1.0.2/5deg/s55e165_dem.tif
+
+echo "Processing DEM files into slope."
+for file in *_dem.tif; do gdaldem slope -s 111120 "$file"  "$(echo $file | sed s/_dem/_slope/)"; done
