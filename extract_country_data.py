@@ -1,4 +1,5 @@
-# Extract counts of each Köppen-Geiger class for each country, exported to CSV.
+"""Extract counts of each Köppen-Geiger/slope/land cover/soil health for each country,
+   for use in Project Drawdown solution models."""
 import argparse
 import math
 import os.path
@@ -122,7 +123,7 @@ class FAO_LC_lookup:
         return self.land_covers.values()
 
 
-class SlopeLookup:
+class GeomorphoLookup:
     """Geomorpho90m slope file dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif
        has been pre-processed with classify_geomorpho90m_slope.py to classify slope values
        into the buckets defined in GAEZ 3.0.
@@ -147,7 +148,7 @@ class WorkabilityLookup:
 
     warpOptions = None
     def get_index(self, label):
-        if label == 0:
+        if label == 0 or label == 255:
             return None
         return label
 
@@ -393,19 +394,18 @@ if __name__ == '__main__':
         mapfilename = 'data/geomorpho90m/classified_slope_merit_dem_250m_s0..0cm_2018_v1.0.tif'
         csvfilename = 'Slope-by-country.csv'
         print(mapfilename)
-        lookupobj = SlopeLookup()
+        lookupobj = GeomorphoLookup()
         process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
                     csvfilename=csvfilename)
         print('\n')
         processed = True
 
     if args.wk or args.all:
-        mapfilename = 'data/FAO/workability_FAO_sq7_10km.tif'
+        mapfilename = 'data/FAO/workability_FAO_sq7_1km.tif'
         csvfilename = 'Workability-by-country.csv'
         print(mapfilename)
         lookupobj = WorkabilityLookup()
-        process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfilename)
+        process_map_with_masks(mapfilename=mapfilename, lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 

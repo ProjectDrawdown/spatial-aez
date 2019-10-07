@@ -219,7 +219,7 @@ def test_lc():
 def test_sl():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/geomorpho90m/test_small.tif'
-    lookupobj = ecd.SlopeLookup()
+    lookupobj = ecd.GeomorphoLookup()
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
     ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,

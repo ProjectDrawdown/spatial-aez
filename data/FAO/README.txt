@@ -1,4 +1,4 @@
-The workability_FAO_sq7_10km.tif file was generated from the sq7 ASC file provided by the FAO at:
+The workability_FAO_sq7_1km.tif file was generated from the sq7 ASC file provided by the FAO at:
 http://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/harmonized-world-soil-database-v12/en/
 
 The TIFF version was generated using:
@@ -6,13 +6,11 @@ The TIFF version was generated using:
 gdal_translate -ot Byte \
 	-mo "TIFFTAG_IMAGEDESCRIPTION=Workability raster file, derived from FAO sq7.asc" \
 	-mo "TIFFTAG_DATETIME=24 Sep 2019" \
-	-a_srs EPSG:4326 \
-	./sq7.asc ./workability_FAO_sq7_10km.tif
+	-a_srs EPSG:4326 -outsize 1000% 0 -co TILED=YES -co COMPRESS=ZSTD -co NBITS=4 \
+	./sq7.asc ./workability_FAO_sq7_1km.tif
 
-Note that while one may be tempted to add compression options, doing so results in
-reshuffling the pixel color values (for better compression) and makes it so we cannot
-easily process the file. With 10km resolution, the GeoTIFF file is relatively small
-even without compression.
+Note that the original ASCI raster is at ~10km resolution, while we expand this to 1km pixels
+in order to work with the extract_country_data.py pipeline.
 
 ------------
 
