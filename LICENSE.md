@@ -20,3 +20,7 @@ Data in this repository comes from other sources and carries the licenses assign
    Requires attribution, see data/FAO/LICENSE.txt.
    Land Cover FAO data allows non-commercial use without prior permission, commercial
    use must contact FAO.
+
+1. data/MERIT-DEM  
+   Dual licensed CC-BY-NC-4.0 or ODbl-1.0, at the user's choice.  
+   Also requires attribution, see data/MERIT\_DEM/LICENSE.txt.
