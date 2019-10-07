@@ -27,20 +27,21 @@ for filename in f:
     outband8 = np.empty(shape, dtype=np.uint8)
 
     for slp_y in range(0, slp_y_siz, slp_y_blksiz):
-        out_y = int(slp_y / 10)
         for slp_x in range(0, slp_x_siz, slp_x_blksiz):
             data = slp_band.ReadAsArray(slp_x, slp_y, slp_x_blksiz, slp_y_blksiz)
-            for m in range(slp_x, slp_x+slp_x_blksiz, 10):
-                out_x = int(m / 10)
-                mdata = data[m:m+10, slp_y:slp_y+10]
-                outband1[out_x, out_y] = np.sum(np.logical_and(mdata >= 0, mdata < 50))
-                outband2[out_x, out_y] = np.sum(np.logical_and(mdata >= 50, mdata < 200))
-                outband3[out_x, out_y] = np.sum(np.logical_and(mdata >= 200, mdata < 500))
-                outband4[out_x, out_y] = np.sum(np.logical_and(mdata >= 500, mdata < 800))
-                outband5[out_x, out_y] = np.sum(np.logical_and(mdata >= 800, mdata < 1600))
-                outband6[out_x, out_y] = np.sum(np.logical_and(mdata >= 1600, mdata < 3000))
-                outband7[out_x, out_y] = np.sum(np.logical_and(mdata >= 3000, mdata < 4500))
-                outband8[out_x, out_y] = np.array([[np.sum(mdata >= 4500)]])
+            for m in range(slp_y, slp_y+slp_y_blksiz, 10):
+                for n in range(slp_x, slp_x+slp_x_blksiz, 10):
+                    out_x = int(n / 10)
+                    out_y = int(m / 10)
+                    mdata = data[n:n+10, m:m+10]
+                    outband1[out_x, out_y] = np.sum(np.logical_and(mdata >= 0, mdata < 50))
+                    outband2[out_x, out_y] = np.sum(np.logical_and(mdata >= 50, mdata < 200))
+                    outband3[out_x, out_y] = np.sum(np.logical_and(mdata >= 200, mdata < 500))
+                    outband4[out_x, out_y] = np.sum(np.logical_and(mdata >= 500, mdata < 800))
+                    outband5[out_x, out_y] = np.sum(np.logical_and(mdata >= 800, mdata < 1600))
+                    outband6[out_x, out_y] = np.sum(np.logical_and(mdata >= 1600, mdata < 3000))
+                    outband7[out_x, out_y] = np.sum(np.logical_and(mdata >= 3000, mdata < 4500))
+                    outband8[out_x, out_y] = np.array([[np.sum(mdata >= 4500)]])
 
     slp_xmin, _, _, slp_ymin, _, _ = slp.GetGeoTransform()
     out_x = int((slp_xmin - out_xmin) / out_xsiz)
