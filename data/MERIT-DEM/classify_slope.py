@@ -1,5 +1,6 @@
 """Process slope tiles from Merit-DEM into 0.0083 degree pixels."""
 
+import math
 import os.path
 import sys
 
@@ -16,7 +17,7 @@ if not os.path.exists(outfilename):
     outysiz = modelimg.RasterYSize
     drv = gdal.GetDriverByName(modelimg.GetDriver().ShortName)
 
-    out = drv.Create(outfilename, xsize=outxsiz, ysize=outysiz, bands=8, eType=gdal.GDT_Byte,
+    out = drv.Create(outfilename, xsize=outxsiz, ysize=outysiz, bands=9, eType=gdal.GDT_Byte,
             options = ['NBITS=7', 'COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2',
                        'SPARSE_OK=TRUE'])
     out.SetProjection(modelimg.GetProjectionRef())
@@ -25,8 +26,8 @@ if not os.path.exists(outfilename):
             'TIFFTAG_ARTIST': 'Denton Gentry @ Project Drawdown',
             'TIFFTAG_DATETIME': '2019',
             'TIFFTAG_IMAGEDESCRIPTION': ('slope classifications derived from MERIT-DEM')})
-    for i in range(1, 9):
-        out.GetRasterBand(i).SetNoDataValue(0.0)
+    # TIFF only has one NoData value for all bands, just set the last one.
+    out.GetRasterBand(9).SetNoDataValue(127.0)
     out = None
 
 out = gdal.Open(outfilename, gdal.GA_Update)
@@ -53,6 +54,7 @@ for filename in f:
     outband6 = np.empty(shape, dtype=np.uint8)
     outband7 = np.empty(shape, dtype=np.uint8)
     outband8 = np.empty(shape, dtype=np.uint8)
+    outband9 = np.empty(shape, dtype=np.uint8)
 
     for slp_y in range(0, slp_y_siz, slp_y_blksiz):
         for slp_x in range(0, slp_x_siz, slp_x_blksiz):
@@ -63,7 +65,7 @@ for filename in f:
                 for m in range(slp_x, slp_x+slp_x_blksiz, 10):
                     out_x = int(m / 10)
                     p_x = int(m - slp_x)
-                    p = data[p_x:p_x+10, p_y:p_y+10]
+                    p = data[p_x:p_x+10, p_y:p_y+10]  # ~1km² at equator
                     outband1[out_x, out_y] = np.sum(np.logical_and(p >= 0.0, p < 0.5))
                     outband2[out_x, out_y] = np.sum(np.logical_and(p >= 0.5, p < 2.0))
                     outband3[out_x, out_y] = np.sum(np.logical_and(p >= 2.0, p < 5.0))
@@ -71,7 +73,12 @@ for filename in f:
                     outband5[out_x, out_y] = np.sum(np.logical_and(p >= 8.0, p < 16.0))
                     outband6[out_x, out_y] = np.sum(np.logical_and(p >= 16.0, p < 30.0))
                     outband7[out_x, out_y] = np.sum(np.logical_and(p >= 30.0, p < 45.0))
-                    outband8[out_x, out_y] = np.sum(p >= 45.0)
+                    outband8[out_x, out_y] = np.sum(np.logical_and(p >= 45.0, p <= 90.0))
+                    valid = p[np.logical_and(p >= 0.0, p <= 90.0)]
+                    if valid.size > 0:
+                        outband9[out_x, out_y] = math.floor(np.nanmean(valid))
+                    else:
+                        outband9[out_x, out_y] = 127
 
     slp_xmin, _, _, slp_ymin, _, _ = slp.GetGeoTransform()
     out_x = int((slp_xmin - out_xmin) / out_xsiz)
@@ -85,5 +92,6 @@ for filename in f:
     out.GetRasterBand(6).WriteArray(outband6, xoff=out_x, yoff=out_y)
     out.GetRasterBand(7).WriteArray(outband7, xoff=out_x, yoff=out_y)
     out.GetRasterBand(8).WriteArray(outband8, xoff=out_x, yoff=out_y)
+    out.GetRasterBand(9).WriteArray(outband9, xoff=out_x, yoff=out_y)
 
 out = None
