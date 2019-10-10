@@ -29,7 +29,7 @@ Another data source comes from the [United Nations Food and Agriculture Organiza
 ### Slope
 Data comes from [Geomorpho90m](https://peerj.com/preprints/27595/), which is generated from [MERIT-DEM data](http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/).
 
-Classified Slope GeoTIFF in data/geomorpho90m/classified\_slope\_merit\_dem\_250m\_s0..0cm\_2018\_v1.0.tif produced 22 Sep 2019 from [dtm_slope_merit.dem_m_250m_s0..0cm_2018_v1.0.tif](https://drive.google.com/open?id=1bSaz-cRF9NCoEHECgf-yHnLJX0oz1lmF) retrieved from [Geomorpho90m Google Drive](https://drive.google.com/drive/folders/1D4YHUycBBhNFVVsz4ohaJI7QXV9BEh94) 21 Sep 2019. Note that the original slope file from Geomorpho90m is 5 GBytes in size, which exceeds the 2GB LFS maximum file size which Github allows and is therefore not checked in to this repository. The generated GeoTIFF file with slopes classified into their GAEZ3.0 bins compresses better and fits within the Github limits.
+Classified Slope GeoTIFF in data/geomorpho90m/classified\_slope\_merit\_dem\_1km\_s0..0cm\_2018\_v1.0.tif produced 09 Oct 2019 from the tar.gz files retrieved from [Geomorpho90m Google Drive](https://drive.google.com/drive/folders/1D4YHUycBBhNFVVsz4ohaJI7QXV9BEh94) 06 Oct 2019. Note that the original slope files from Geomorpho90m are tens of GBytes in size, which exceeds the 2GB LFS maximum file size which Github allows and is therefore not checked in to this repository. The generated GeoTIFF file with slopes classified into their GAEZ3.0 bins compresses better and fits within the Github limits.
 
 
 ### Soil Workability
