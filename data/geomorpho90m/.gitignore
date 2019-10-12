@@ -1,2 +1,6 @@
 *.tar.gz
 *.tar.gz.properties
+slope_90M_*.tif
+slope_90M_*.tif.aux.xml
+slope_90M_*.jpg
+slope_90M_*.jpg.aux.xml

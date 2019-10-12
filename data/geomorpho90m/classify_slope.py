@@ -30,8 +30,7 @@ if not os.path.exists(outfilename):
             'TIFFTAG_DATETIME': '2019',
             'TIFFTAG_IMAGEDESCRIPTION': ('slope classifications, derived from slope geomorpho90m, '
                                          'itself derived from MERIT-DEM')})
-    # TIFF only has one NoData value for all bands, just set the last one.
-    out.GetRasterBand(9).SetNoDataValue(127.0)
+    out.GetRasterBand(1).SetNoDataValue(0)
     out = None
 
 out = gdal.Open(outfilename, gdal.GA_Update)
@@ -70,19 +69,19 @@ for filename in f:
                     out_x = int(m / 10)
                     p_x = int(m - slp_x)
                     p = data[p_x:p_x+10, p_y:p_y+10]  # ~1km² at equator
-                    outband1[out_x, out_y] = np.sum(np.logical_and(p >= 0.0, p < 0.5))
-                    outband2[out_x, out_y] = np.sum(np.logical_and(p >= 0.5, p < 2.0))
-                    outband3[out_x, out_y] = np.sum(np.logical_and(p >= 2.0, p < 5.0))
-                    outband4[out_x, out_y] = np.sum(np.logical_and(p >= 5.0, p < 8.0))
-                    outband5[out_x, out_y] = np.sum(np.logical_and(p >= 8.0, p < 16.0))
-                    outband6[out_x, out_y] = np.sum(np.logical_and(p >= 16.0, p < 30.0))
-                    outband7[out_x, out_y] = np.sum(np.logical_and(p >= 30.0, p < 45.0))
-                    outband8[out_x, out_y] = np.sum(np.logical_and(p >= 45.0, p <= 90.0))
+                    outband1[out_y, out_x] = np.sum(np.logical_and(p >= 0.0, p < 0.5))
+                    outband2[out_y, out_x] = np.sum(np.logical_and(p >= 0.5, p < 2.0))
+                    outband3[out_y, out_x] = np.sum(np.logical_and(p >= 2.0, p < 5.0))
+                    outband4[out_y, out_x] = np.sum(np.logical_and(p >= 5.0, p < 10.0))
+                    outband5[out_y, out_x] = np.sum(np.logical_and(p >= 10.0, p < 15.0))
+                    outband6[out_y, out_x] = np.sum(np.logical_and(p >= 15.0, p < 30.0))
+                    outband7[out_y, out_x] = np.sum(np.logical_and(p >= 30.0, p < 45.0))
+                    outband8[out_y, out_x] = np.sum(np.logical_and(p >= 45.0, p <= 90.0))
                     valid = p[np.logical_and(p >= 0.0, p <= 90.0)]
                     if valid.size > 0:
-                        outband9[out_x, out_y] = math.floor(np.nanmean(valid))
+                        outband9[out_y, out_x] = math.floor(np.nanmean(valid))
                     else:
-                        outband9[out_x, out_y] = 127
+                        outband9[out_y, out_x] = 127
 
     slp_xmin, _, _, slp_ymin, _, _ = slp.GetGeoTransform()
     out_x = int((slp_xmin - out_xmin) / out_xsiz)
