@@ -429,7 +429,7 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Tropical-Humid-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Tropical-Humid.csv')
 
 gaez_region = pd.DataFrame(gaez_temperate_boreal_humid[1:], columns=gaez_temperate_boreal_humid[0]).set_index('Region')
 df = pd.DataFrame(columns=gaez_region.columns.copy())
@@ -437,7 +437,7 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Temperate-Boreal-Humid-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Temperate-Boreal-Humid.csv')
 
 gaez_region = pd.DataFrame(gaez_tropical_semiarid[1:], columns=gaez_tropical_semiarid[0]).set_index('Region')
 df = pd.DataFrame(columns=gaez_region.columns.copy())
@@ -445,7 +445,7 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Tropical-Semiarid-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Tropical-Semiarid.csv')
 
 gaez_region = pd.DataFrame(gaez_temperate_boreal_semiarid[1:], columns=gaez_temperate_boreal_semiarid[0]).set_index('Region')
 df = pd.DataFrame(columns=gaez_region.columns.copy())
@@ -453,7 +453,7 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Tropical-Boreal-Semiarid-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Tropical-Boreal-Semiarid.csv')
 
 gaez_region = pd.DataFrame(gaez_global_arid[1:], columns=gaez_global_arid[0]).set_index('Region')
 df = pd.DataFrame(columns=gaez_region.columns.copy())
@@ -461,7 +461,7 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Arid-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Arid.csv')
 
 gaez_region = pd.DataFrame(gaez_global_arctic[1:], columns=gaez_global_arctic[0]).set_index('Region')
 df = pd.DataFrame(columns=gaez_region.columns.copy())
@@ -469,4 +469,4 @@ for region in gaez_region.index:
     df.loc[region + ':Excel'] = gaez_region.loc[region, :]
     df.loc[region + ':spatial'] = spatial_region.loc[region, :]
     df.loc[region + ':spatial', 'total'] = df.loc[region + ':spatial'].sum()
-df.fillna(0).astype(int).to_csv('results/Arctic-AEZ.csv')
+df.fillna(0).astype(int).to_csv('results/AEZ-Arctic.csv')
