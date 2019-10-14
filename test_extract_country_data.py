@@ -10,9 +10,9 @@ import extract_country_data as ecd
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 40)
 
-def test_areas_reasonable():
+def test_country_areas_reasonable():
     num = 0
-    for filename in glob.glob('results/*.csv'):
+    for filename in glob.glob('results/*-by-country.csv'):
         print(f"{filename}")
         num = num + 1
         df = pd.read_csv(filename).set_index('Country')
@@ -22,7 +22,7 @@ def test_areas_reasonable():
             area = row.sum()
             expected = expected_area[country.upper()]
             print(f"{country}: {area} expected={expected}")
-            if expected < 2500 and area < 2500:
+            if expected < 5000 and area < 5000:
                 continue
             elif expected < 35000 and area < 35000:
                 if 'workability' in filename.lower():
@@ -277,13 +277,10 @@ def test_AEZ_vs_excel():
 def test_kg():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p5.tif'
-    img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
-    ctable = img.GetRasterBand(1).GetColorTable()
-    lookupobj = ecd.KGlookup(ctable)
+    lookupobj = ecd.KGlookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfile.name)
+    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -292,11 +289,10 @@ def test_kg():
 def test_lc():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/ucl_elie/test_small.tif'
-    lookupobj = ecd.ESA_LC_lookup()
+    lookupobj = ecd.ESA_LC_lookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfile.name)
+    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -305,11 +301,10 @@ def test_lc():
 def test_sl():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     mapfilename = 'data/geomorpho90m/test_small.tif'
-    lookupobj = ecd.GeomorphoLookup()
+    lookupobj = ecd.GeomorphoLookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfile.name)
+    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -317,12 +312,11 @@ def test_sl():
 
 def test_wk():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
-    mapfilename = 'data/FAO/workability_FAO_sq7_10km.tif'
-    lookupobj = ecd.WorkabilityLookup()
+    mapfilename = 'data/FAO/test_small.tif'
+    lookupobj = ecd.WorkabilityLookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map(shapefilename=shapefilename, mapfilename=mapfilename, lookupobj=lookupobj,
-                    csvfilename=csvfile.name)
+    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
