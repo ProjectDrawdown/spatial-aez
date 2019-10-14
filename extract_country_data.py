@@ -222,7 +222,7 @@ def blklim(coord, blksiz, totsiz):
         return totsiz - coord
 
 
-def process_map_with_masks(lookupobj, csvfilename):
+def process_map(lookupobj, csvfilename):
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     df = pd.DataFrame(columns=lookupobj.get_columns(), dtype=float)
     df.index.name = 'Country'
@@ -473,7 +473,7 @@ if __name__ == '__main__':
         csvfilename = 'FAO-Land-Cover-by-country.csv'
         print(mapfilename)
         lookupobj = FAO_LC_lookup(mapfilename)
-        #process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
 
         land_cover_files = [
@@ -492,7 +492,7 @@ if __name__ == '__main__':
                 continue
             print(mapfilename)
             lookupobj = ESA_LC_lookup(mapfilename)
-            process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+            process_map(lookupobj=lookupobj, csvfilename=csvfilename)
             print('\n')
         processed = True
 
@@ -501,14 +501,14 @@ if __name__ == '__main__':
         csvfilename = 'Köppen-Geiger-present-by-country.csv'
         print(mapfilename)
         lookupobj = KGlookup(mapfilename)
-        process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
 
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
         csvfilename = 'Köppen-Geiger-future-by-country.csv'
         print(mapfilename)
         lookupobj = KGlookup(mapfilename)
-        process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 
@@ -517,7 +517,7 @@ if __name__ == '__main__':
         csvfilename = 'Slope-by-country.csv'
         print(mapfilename)
         lookupobj = GeomorphoLookup(mapfilename=mapfilename)
-        process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 
@@ -526,7 +526,7 @@ if __name__ == '__main__':
         csvfilename = 'Workability-by-country.csv'
         print(mapfilename)
         lookupobj = WorkabilityLookup(mapfilename)
-        process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 

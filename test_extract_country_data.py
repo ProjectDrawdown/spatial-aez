@@ -280,7 +280,7 @@ def test_kg():
     lookupobj = ecd.KGlookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
+    ecd.process_map(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -292,7 +292,7 @@ def test_lc():
     lookupobj = ecd.ESA_LC_lookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
+    ecd.process_map(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -304,7 +304,7 @@ def test_sl():
     lookupobj = ecd.GeomorphoLookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
+    ecd.process_map(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
@@ -316,7 +316,7 @@ def test_wk():
     lookupobj = ecd.WorkabilityLookup(mapfilename, maskdim='0p5')
     csvfile = tempfile.NamedTemporaryFile()
     assert os.path.getsize(csvfile.name) == 0
-    ecd.process_map_with_masks(lookupobj=lookupobj, csvfilename=csvfile.name)
+    ecd.process_map(lookupobj=lookupobj, csvfilename=csvfile.name)
     assert os.path.getsize(csvfile.name) != 0
     df = pd.read_csv(csvfile.name).set_index('Country').sum(axis=1)
     assert 'United States of America' in df.index
