@@ -2,7 +2,9 @@ Result.tif filter=lfs diff=lfs merge=lfs -text
 data/**/*.tiff filter=lfs diff=lfs merge=lfs -text
 data/**/*.Tif filter=lfs diff=lfs merge=lfs -text
 data/**/*.tif filter=lfs diff=lfs merge=lfs -text
+data/**/*._tif filter=lfs diff=lfs merge=lfs -text
 data/**/*.shp filter=lfs diff=lfs merge=lfs -text
 data/**/*.dbf filter=lfs diff=lfs merge=lfs -text
 data/**/*.zip filter=lfs diff=lfs merge=lfs -text
 data/**/*.ZIP filter=lfs diff=lfs merge=lfs -text
+masks/*._tif filter=lfs diff=lfs merge=lfs -text

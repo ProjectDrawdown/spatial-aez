@@ -64,15 +64,29 @@ def rasterize_one_feature(img, feature, layer, outfile):
 
 
 def process_shapefile():
-    img = osgeo.gdal.Open('data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif', osgeo.gdal.GA_ReadOnly)
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     shp_drv = osgeo.ogr.GetDriverByName("ESRI Shapefile")
     shapefile = shp_drv.Open(shapefilename, 0)
     layer = shapefile.GetLayerByIndex(0)
 
+    img = osgeo.gdal.Open('data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif', osgeo.gdal.GA_ReadOnly)
     for idx, feature in enumerate(layer):
         a3 = feature.GetField("SOV_A3")
         outfile = f'masks/{a3}_{idx}_1km_mask._tif'
+        print(f'{outfile}')
+        rasterize_one_feature(img=img, feature=feature, layer=layer, outfile=outfile)
+
+    img = osgeo.gdal.Open('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', osgeo.gdal.GA_ReadOnly)
+    for idx, feature in enumerate(layer):
+        a3 = feature.GetField("SOV_A3")
+        outfile = f'masks/{a3}_{idx}_333m_mask._tif'
+        print(f'{outfile}')
+        rasterize_one_feature(img=img, feature=feature, layer=layer, outfile=outfile)
+
+    img = osgeo.gdal.Open('data/Beck_KG_V1/Beck_KG_V1_present_0p5.tif', osgeo.gdal.GA_ReadOnly)
+    for idx, feature in enumerate(layer):
+        a3 = feature.GetField("SOV_A3")
+        outfile = f'masks/{a3}_{idx}_0p5_mask._tif'
         print(f'{outfile}')
         rasterize_one_feature(img=img, feature=feature, layer=layer, outfile=outfile)
 
