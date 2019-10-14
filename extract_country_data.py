@@ -112,35 +112,6 @@ class ESA_LC_lookup:
                 121, 122, 130, 140, 150, 151, 152, 153, 160, 170, 180, 190, 200, 201, 202, 210, 220]
 
 
-class FAO_LC_lookup:
-    """Pixel color to Land Cover class in 
-    """
-    land_covers = {1: 'Artificial Surfaces', 2: 'Cropland', 3: 'Grassland',
-            4: 'Tree Covered Areas', 5: 'Shrubs Covered Areas',
-            6: 'Herbaceous vegetation, aquatic or regularly flooded',
-            7: 'Mangroves', 8: 'Sparse vegetation', 9: 'Baresoil', 10: 'Snow and glaciers',
-            11: 'Waterbodies'}
-
-    def __init__(self, mapfilename, maskdim='1km'):
-        self.maskdim = maskdim
-        self.img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
-        self.band = self.img.GetRasterBand(1)
-
-    def km2(self, x, y, ncols, nrows, maskblock, km2block, df, admin):
-        block = self.band.ReadAsArray(x, y, ncols, nrows)
-        masked = np.ma.masked_array(block, mask=np.logical_not(maskblock))
-        for label in np.unique(masked):
-            if label is np.ma.masked or label == 0 or label == 255:
-                # black == no land cover (like water), just skip it.
-                continue
-            typ = self.land_covers[label]
-            df.loc[admin, typ] += km2block[masked == label].sum()
-
-    def get_columns(self):
-        """Return list of LCCS classes present in this dataset."""
-        return self.land_covers.values()
-
-
 class GeomorphoLookup:
     """Geomorpho90m pre-processed slope file in data/geomorpho90m/classified_*.tif.
        There is a band in the TIF for each slope class defined in GAEZ 3.0.
@@ -216,6 +187,7 @@ def is_sparse(band, x, y, ncols, nrows):
 
 
 def blklim(coord, blksiz, totsiz):
+    """Return block dimensions, limited by the totsiz of the image."""
     if (coord + blksiz) < totsiz:
         return blksiz
     else:
@@ -223,6 +195,7 @@ def blklim(coord, blksiz, totsiz):
 
 
 def process_map(lookupobj, csvfilename):
+    """Produce a CSV file of areas per country from a dataset."""
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     df = pd.DataFrame(columns=lookupobj.get_columns(), dtype=float)
     df.index.name = 'Country'
@@ -262,6 +235,7 @@ def process_map(lookupobj, csvfilename):
 
 
 def process_aez():
+    """Produce a CSV file of Thermal Moisture Regime + Agro-Ecological Zone per country."""
     tmr_names = ['tropical-humid', 'arid', 'tropical-semiarid', 'temperate/boreal-humid',
                  'temperate/boreal-semiarid', 'arctic', 'invalid']
     columns = []
@@ -450,7 +424,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
 
-    parser = argparse.ArgumentParser(description='Videos to images')
+    parser = argparse.ArgumentParser(description='Process GeoTIFF datasets for Project Drawdown')
     parser.add_argument('--lc', default=False, required=False,
                         action='store_true', help='process land cover')
     parser.add_argument('--kg', default=False, required=False,

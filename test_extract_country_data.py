@@ -45,116 +45,6 @@ def test_country_areas_reasonable():
     assert num >= 4
 
 
-def test_country_land_cover_vs_excel():
-    df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
-    regional = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
-        'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
-        columns=df.columns.copy())
-    for country, row in df.iterrows():
-        region = region_mapping[country]
-        if region is not None:
-            regional.loc[region, :] += row
-    gaez = pd.DataFrame(gaez_land_areas[1:], columns=gaez_land_areas[0]).set_index('Country')
-    for country, row in df.iterrows():
-        if country not in gaez.index:
-            continue
-
-        percent = gaez.loc[country, "Forest Land"] / 100.0
-        total = gaez.loc[country, "All Classes"]
-        expected = total * percent
-        if expected > 50000:
-            actual = row['Tree Covered Areas']
-            assert actual > expected * 0.6
-            assert actual < expected * 2.4
-
-        percent = gaez.loc[country, "Urban Land"] / 100.0
-        total = gaez.loc[country, "All Classes"]
-        expected = total * percent
-        if expected > 50000:
-            actual = row['Artificial Surfaces']
-            assert actual > expected * 0.05
-            assert actual < expected * 2.4
-
-        percent = gaez.loc[country, "Grassland"] / 100.0
-        total = gaez.loc[country, "All Classes"]
-        expected = total * percent
-        if expected > 50000:
-            actual = row['Grassland'] + row['Sparse vegetation']
-            assert actual > expected * 0.0002
-            assert actual < expected * 2.4
-
-        percent = (gaez.loc[country, "Irrigated Cultivated Land"] +
-                gaez.loc[country, "Rainfed Cultivated Land"]) / 100.0
-        total = gaez.loc[country, "All Classes"]
-        expected = total * percent
-        if expected > 50000:
-            actual = row['Cropland']
-            assert actual > expected * 0.25
-            assert actual < expected * 3.1
-
-        percent = gaez.loc[country, "Water"] / 100.0
-        total = gaez.loc[country, "All Classes"]
-        expected = total * percent
-        if expected > 50000:
-            actual = row['Waterbodies']
-            assert actual > expected * 0.5
-            assert actual < expected * 2.4
-
-        # Not accounted for:
-        # Shrubs Covered Areas,"Herbaceous vegetation, aquatic or regularly flooded",Baresoil,Snow and glaciers
-        # expected = gaez.loc[country, "Barren Land"]
-
-
-def test_regional_land_cover_vs_excel_fao():
-    df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
-    gaez = pd.DataFrame(gaez_land_areas[1:], columns=gaez_land_areas[0]).set_index('Country')
-    fao_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
-        'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
-        columns=df.columns.copy())
-    gaez_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
-        'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
-        columns=gaez.columns.copy())
-
-    for country, row in df.iterrows():
-        region = region_mapping[country]
-        if region is not None:
-            fao_region.loc[region, :] += row
-    for country, row in gaez.iterrows():
-        region = region_mapping[country]
-        if region is not None:
-            total = gaez.loc[country, "All Classes"]
-
-            percent = gaez.loc[country, "Forest Land"] / 100.0
-            gaez_region.loc[region, "Forest Land"] += (percent * total)
-
-            percent = gaez.loc[country, "Grassland"] / 100.0
-            gaez_region.loc[region, "Grassland"] += (percent * total)
-
-            percent = gaez.loc[country, "Irrigated Cultivated Land"] / 100.0
-            gaez_region.loc[region, "Irrigated Cultivated Land"] += (percent * total)
-
-            percent = gaez.loc[country, "Rainfed Cultivated Land"] / 100.0
-            gaez_region.loc[region, "Rainfed Cultivated Land"] += (percent * total)
-
-    for region in gaez_region.index:
-        expected = gaez_region.loc[region, "Forest Land"]
-        actual = fao_region.loc[region, "Tree Covered Areas"]
-        assert actual > expected * 0.6
-        assert actual < expected * 1.5
-
-        expected = gaez_region.loc[region, "Grassland"]
-        actual = (fao_region.loc[region, "Grassland"] + fao_region.loc[region, "Sparse vegetation"] +
-                fao_region.loc[region, "Baresoil"])
-        assert actual > expected * 0.3
-        assert actual < expected * 1.7
-
-        expected = (gaez_region.loc[region, "Irrigated Cultivated Land"] +
-                gaez_region.loc[region, "Rainfed Cultivated Land"])
-        actual = fao_region.loc[region, "Cropland"]
-        assert actual > expected * 0.8
-        assert actual < expected * 1.9
-
-
 @pytest.mark.skip(reason="still developing this test's asserts")
 def test_world_land_cover_vs_excel_esa():
     df = pd.read_csv('results/Land-Cover-by-country.csv').set_index('Country')
@@ -168,21 +58,6 @@ def test_world_land_cover_vs_excel_esa():
         shrubland += row[12]
         grassland += row[11] + row[130] + row[150] + row[151] + row[152] + row[153]
         cropland += row[10] + row[20] + row[30]
-
-    print(f"forest: {forest} grassland: {grassland} shrubland: {shrubland} cropland: {cropland}")
-    assert False
-
-
-@pytest.mark.skip(reason="still developing this test's asserts")
-def test_world_land_cover_vs_excel_fao():
-    df = pd.read_csv('results/FAO-Land-Cover-by-country.csv').set_index('Country')
-    forest = grassland = shrubland = cropland = 0
-    for country, row in df.iterrows():
-        #forest += row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
-        forest += row["Tree Covered Areas"]
-        shrubland += row["Shrubs Covered Areas"]
-        grassland += row["Grassland"] + row["Sparse vegetation"]
-        cropland += row["Cropland"]
 
     print(f"forest: {forest} grassland: {grassland} shrubland: {shrubland} cropland: {cropland}")
     assert False
