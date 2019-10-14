@@ -469,13 +469,6 @@ if __name__ == '__main__':
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
 
     if args.lc or args.all:
-        mapfilename = 'data/FAO/glc_shv10_dominant_landcover.tif'
-        csvfilename = 'FAO-Land-Cover-by-country.csv'
-        print(mapfilename)
-        lookupobj = FAO_LC_lookup(mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
-        print('\n')
-
         land_cover_files = [
                 ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country.csv'),
                 ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),

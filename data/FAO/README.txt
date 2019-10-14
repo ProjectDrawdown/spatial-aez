@@ -15,16 +15,3 @@ in order to work with the extract_country_data.py pipeline.
 
 In addition, a test_small.tif file is generated to use in unit tests:
 gdal_translate -outsize 720 0 data/FAO/workability_FAO_sq7_1km.tif data/FAO/test_small.tif
-
-------------
-
-The glc_shv10_dominant_landcover.tif came from
-http://www.fao.org/geonetwork/srv/en/main.home?uuid=ba4526fd-cdbf-4028-a1bd-5a559c4bff38
-with processing to change the block size to 256x256:
-
-gdal_translate -a_srs EPSG:4326 -co COMPRESS=LZW -co TILED=YES \
-	/vsizip/data/FAO/GlcShare_v10_Dominant.zip/glc_shv10_DOM.Tif \
-	./data/FAO/glc_shv10_dominant_landcover.tif
-
-Many thanks to user2856 on gis.stackexchange.com for answering:
-https://gis.stackexchange.com/questions/337483/gdalwarp-to-change-block-size-also-changes-pixel-values
