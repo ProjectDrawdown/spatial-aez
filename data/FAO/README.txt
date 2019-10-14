@@ -12,6 +12,10 @@ gdal_translate -ot Byte \
 Note that the original ASCI raster is at ~10km resolution, while we expand this to 1km pixels
 in order to work with the extract_country_data.py pipeline.
 
+
+In addition, a test_small.tif file is generated to use in unit tests:
+gdal_translate -outsize 720 0 data/FAO/workability_FAO_sq7_1km.tif data/FAO/test_small.tif
+
 ------------
 
 The glc_shv10_dominant_landcover.tif came from

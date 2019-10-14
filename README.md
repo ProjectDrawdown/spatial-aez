@@ -6,7 +6,7 @@ The output of this code is a series of CSV files, with a row per country and col
 per data class.  Names are normalized to those used in [Project Drawdown](https://drawdown.org).
 Data is calculated per country, correcting for WGS84 projection.
 
-Note that the data processed in this repository comes from external sources, several of which require
+Note that the data processed in this repository comes from external sources, most of which require
 attribution in the form of a citation of their contribution. Please see LICENSE.md for details and links.
 
 
@@ -14,7 +14,7 @@ attribution in the form of a citation of their contribution. Please see LICENSE.
 Data files come from the Nature article
 ["Present and future Köppen-Geiger climate classification maps at 1-km resolution"](https://www.nature.com/articles/sdata2018214.pdf).
 
-[Paper's data files](http://www.gloh2o.org/koppen/) retrieved 22 Aug 2019.
+[Data files from the paper](http://www.gloh2o.org/koppen/) retrieved 22 Aug 2019.
 
 
 ### Land Cover
@@ -23,7 +23,7 @@ Data comes from the [European Space Agency Climate Change Initiative](http://map
 [Land Cover GeoTIFF](https://storage.googleapis.com/cci-lc-v207/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.zip) retrieved 19 Sep 2019.
 
 
-Another data source comes from the [United Nations Food and Agriculture Organization](http://www.fao.org/geonetwork/srv/en/main.home?uuid=ba4526fd-cdbf-4028-a1bd-5a559c4bff38), retrieved 9/30/2019.
+Another data source comes from the [United Nations Food and Agriculture Organization](http://www.fao.org/geonetwork/srv/en/main.home?uuid=ba4526fd-cdbf-4028-a1bd-5a559c4bff38), retrieved 9/30/2019, though the FAO dataset was ultimately not used to generate results.
 
 
 ### Slope

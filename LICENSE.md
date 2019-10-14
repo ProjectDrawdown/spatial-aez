@@ -14,8 +14,8 @@ Data in this repository comes from other sources and carries the licenses assign
    Requires attribution, see data/ucl\_elie/LICENSE.txt or the author's site at [http://maps.elie.ucl.ac.be/CCI/viewer/download.php](http://maps.elie.ucl.ac.be/CCI/viewer/download.php).
 
 1. data/geomorpho90m  
-   MERIT-DEM from which Geomorpho90m is derived is dual licensed CC-BY-NC-4.0 or ODbl-1.0, at the user's choice.  
    Requires attribution, see data/geomorpho90m/LICENSE.txt.
+   MERIT-DEM from which Geomorpho90m is derived is dual licensed CC-BY-NC-4.0 or ODbl-1.0, at the user's choice.  
 
 1. data/FAO  
    Requires attribution, see data/FAO/LICENSE.txt.
