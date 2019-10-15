@@ -167,10 +167,10 @@ def populate_aez(df, admin, km2_blk, regime, tmr, slope, land_use, soil_health):
             soil_health['bare'], soil_health['water'])))].sum()
 
 
-def process_aez():
+def produce_aez_csv_file():
     """Produce a CSV file of Thermal Moisture Regime + Agro-Ecological Zone per country."""
     tmr_names = ['tropical-humid', 'arid', 'tropical-semiarid', 'temperate/boreal-humid',
-                 'temperate/boreal-semiarid', 'arctic', 'invalid']
+                 'temperate/boreal-semiarid', 'arctic']
     columns = []
     for tmr in tmr_names:
         columns.extend([f"{tmr}|AEZ{x}" for x in range(0, 30)])
@@ -245,7 +245,151 @@ def process_aez():
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
 
+# color table entries
+C_TMR_TRHU = 1  # tropical-humid
+C_TMR_ARID = 2  # arid
+C_TMR_TRSA = 3  # tropical-semiarid
+C_TMR_TBHU = 4  # temperate/boreal-humid
+C_TMR_TBSA = 5  # temperate/boreal-semiarid
+C_TMR_ARTC = 6  # arctic
+C_TMR_INVD = 7  # invalid
+C_SLP_MIN  = 8  # minimal slope
+C_SLP_MOD  = 9  # moderate slope
+C_SLP_STP  = 10 # steep slope
+C_LUS_FRST = 11 # forest
+C_LUS_CRRF = 12 # cropland, rainfed
+C_LUS_CRIR = 13 # cropland, irrigated
+C_LUS_GRSS = 14 # grassland
+C_LUS_BARE = 15 # bare land
+C_LUS_URBN = 16 # urban
+C_LUS_WATR = 17 # water
+C_LUS_ICE  = 18 # ice
+C_SLH_PRME = 19 # prime
+C_SLH_GOOD = 20 # good
+C_SLH_MRGN = 21 # marginal
+ 
+C_BLANK = 255   # blank
+
+# TIFF Band numbering
+B_TMR = 1        # Thermal-Moisture Regime
+B_SLP = 2        # slope
+B_LUS = 3        # land use
+B_SLH = 4        # soil health
+
+def create_output_GeoTIFF(ref_img, filename):
+    drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
+    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=2,
+            eType=osgeo.gdal.GDT_Byte, options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2',
+                'PHOTOMETRIC=MINISBLACK'])
+    out.SetProjection(ref_img.GetProjectionRef())
+    out.SetGeoTransform(ref_img.GetGeoTransform())
+    colors = osgeo.gdal.ColorTable()
+
+    # Thermal Moisture Regime
+    colors.SetColorEntry(C_TMR_TRHU, (49,113,35))    # tropical-humid == deep green
+    colors.SetColorEntry(C_TMR_ARID, (255,225,128))  # arid == yellow
+    colors.SetColorEntry(C_TMR_TRSA, (201,97,165))   # tropical-semiarid == pinkish
+    colors.SetColorEntry(C_TMR_TBHU, (99,222,123))   # temperate/boreal-humid == light green
+    colors.SetColorEntry(C_TMR_TBSA, (187,88,62))    # temperate/boreal-semiarid == umber
+    colors.SetColorEntry(C_TMR_ARTC, (240,240,248))  # arctic == off-white
+    colors.SetColorEntry(C_TMR_INVD, (101,60,123))   # invalid = purple
+    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
+    band = out.GetRasterBand(1)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    # Slope
+    colors.SetColorEntry(C_SLP_MIN,  (32, 64, 32))   # minimal slope == light blue
+    colors.SetColorEntry(C_SLP_MOD,  (32, 64, 96))   # moderate slope == medium blue
+    colors.SetColorEntry(C_SLP_STP,  (32, 64, 240))  # steep slope == deep blue
+    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
+    band = out.GetRasterBand(2)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    # Land Use
+    colors.SetColorEntry(C_LUS_FRST, (49,113,35))   # forest == deep green
+    colors.SetColorEntry(C_LUS_CRRF, (245,237,7))   # cropland_rainfed == yellow
+    colors.SetColorEntry(C_LUS_CRIR, (227,175,18))  # cropland_irrigated == orange
+    colors.SetColorEntry(C_LUS_GRSS, (99,222,123))  # grassland == light green
+    colors.SetColorEntry(C_LUS_BARE, (80,80,80))    # bare == dark grey
+    colors.SetColorEntry(C_LUS_URBN, (198,198,218)) # urban == light steel grey
+    colors.SetColorEntry(C_LUS_WATR, (128,128,240)) # water == blue
+    colors.SetColorEntry(C_LUS_ICE,  (240,240,248)) # ice == off-white
+    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
+    #band = out.GetRasterBand(3)
+    #band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    # Soil Health
+    colors.SetColorEntry(C_SLH_PRME, (49,113,35))   # prime == dark brown
+    colors.SetColorEntry(C_SLH_GOOD, (212,145,0))   # good == light brown
+    colors.SetColorEntry(C_SLH_MRGN, (173,13,2))    # marginal == reddish brown
+    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
+    #band = out.GetRasterBand(4)
+    #band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    band = out.GetRasterBand(1)
+    band.SetRasterColorTable(colors)
+
+    return out
+
+
+def produce_aez_GeoTIFF():
+    """Produce a GeoTIFF file of Thermal Moisture Regime + Agro-Ecological Zone."""
+    kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
+    lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
+    sl_filename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
+    wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
+    kg_img = osgeo.gdal.Open(kg_filename, osgeo.gdal.GA_ReadOnly)
+    kg_band = kg_img.GetRasterBand(1)
+    lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
+    lc_band = lc_img.GetRasterBand(1)
+    sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
+    sl_band = sl_img.GetRasterBand(9)
+    wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
+    wk_band = wk_img.GetRasterBand(1)
+
+    out = create_output_GeoTIFF(ref_img=kg_img, filename='results/AEZ.tif')
+
+    x_siz = kg_band.XSize
+    y_siz = kg_band.YSize
+    x_blksiz, y_blksiz = (256, 256)
+
+    for y in range(0, y_siz, y_blksiz):
+        print('.', end='')
+        nrows = geoutil.blklim(coord=y, blksiz=y_blksiz, totsiz=y_siz)
+        for x in range(0, x_siz, x_blksiz):
+            ncols = geoutil.blklim(coord=x, blksiz=x_blksiz, totsiz=x_siz)
+
+            kg_blk = kg_band.ReadAsArray(x, y, ncols, nrows)
+            regime = populate_tmr(kg_blk)
+            outarray = np.full((nrows, ncols), C_BLANK)
+            outarray[regime['tropical-humid']] = C_TMR_TRHU
+            outarray[regime['arid']] = C_TMR_ARID
+            outarray[regime['tropical-semiarid']] = C_TMR_TRSA
+            outarray[regime['temperate/boreal-semiarid']] = C_TMR_TBSA
+            outarray[regime['temperate/boreal-humid']] = C_TMR_TBHU
+            outarray[regime['arctic']] = C_TMR_ARTC
+            outarray[regime['invalid']] = C_TMR_INVD
+            out.GetRasterBand(B_TMR).WriteArray(outarray, xoff=x, yoff=y)
+
+            sl_blk = sl_band.ReadAsArray(x, y, ncols, nrows)
+            slope = populate_slope(sl_blk)
+            outarray = np.full((nrows, ncols), C_BLANK)
+            outarray[slope['minimal']] = C_SLP_MIN
+            outarray[slope['moderate']] = C_SLP_MOD
+            outarray[slope['steep']] = C_SLP_STP
+            out.GetRasterBand(B_SLP).WriteArray(outarray, xoff=x, yoff=y)
+
+            lc_blk = lc_band.ReadAsArray(3*x, 3*y, 3*ncols, 3*nrows)
+            land_use = populate_land_use(lc_blk)
+
+            wk_blk = wk_band.ReadAsArray(x, y, ncols, nrows)
+            soil_health = populate_soil_health(wk_blk)
+
+    out = None
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
-    process_aez()
+    produce_aez_csv_file()
+    #produce_aez_GeoTIFF()
