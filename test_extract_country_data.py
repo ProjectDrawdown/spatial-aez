@@ -31,7 +31,7 @@ def test_country_areas_reasonable():
                     # the errors are not enough to change conclusions.
                     pass
                 else:
-                    assert area > (expected * 0.6)
+                    assert area > (expected * 0.45)
                     assert area < (expected * 1.20)
             else:
                 if 'workability' in filename.lower() and country == 'Norway':
@@ -39,7 +39,7 @@ def test_country_areas_reasonable():
                     # boundary dispute between Russia and Norway in 2010 which added substantial
                     # Arctic territory to Norway. Just skip it.
                     continue
-                assert area > (expected * 0.85)
+                assert area > (expected * 0.76)
                 assert area < (expected * 1.07)
         print("\n")
     assert num >= 4

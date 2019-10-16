@@ -28,6 +28,40 @@ osgeo.gdal.PushErrorHandler("CPLQuietErrorHandler")
 np.set_printoptions(threshold=sys.maxsize)
 
 
+# color table entries
+C_TMR_TRHU =   0  # tropical-humid
+C_TMR_ARID =  30  # arid
+C_TMR_TRSA =  60  # tropical-semiarid
+C_TMR_TBHU =  90  # temperate/boreal-humid
+C_TMR_TBSA = 120  # temperate/boreal-semiarid
+C_TMR_ARTC = 150  # arctic
+C_SLP_MIN  = 207  # minimal slope
+C_SLP_MOD  = 208  # moderate slope
+C_SLP_STP  = 209  # steep slope
+C_LUS_FRST = 210  # forest
+C_LUS_CRRF = 211  # cropland, rainfed
+C_LUS_CRIR = 212  # cropland, irrigated
+C_LUS_GRSS = 213  # grassland
+C_LUS_BARE = 214  # bare land
+C_LUS_URBN = 215  # urban
+C_LUS_WATR = 216  # water
+C_LUS_ICE  = 217  # ice
+C_SLH_PRME = 218  # prime
+C_SLH_GOOD = 219  # good
+C_SLH_MRGN = 220  # marginal
+ 
+C_BLANK = 255     # blank
+
+tmr_state = {
+        'tropical-humid': C_TMR_TRHU,
+        'arid': C_TMR_ARID,
+        'tropical-semiarid': C_TMR_TRSA,
+        'temperate/boreal-humid': C_TMR_TBHU,
+        'temperate/boreal-semiarid': C_TMR_TBSA,
+        'arctic': C_TMR_ARTC,
+        }
+
+
 def start_pdb(sig, frame):
     """Start PDB on a signal."""
     pdb.Pdb().set_trace(frame)
@@ -88,92 +122,101 @@ def populate_soil_health(wk_blk):
     return soil_health
 
 
-def populate_aez(df, admin, km2_blk, regime, tmr, slope, land_use, soil_health):
-    df.loc[admin, f"{tmr}|AEZ1"] += (km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['prime'], slope['minimal']))]).sum()
-    df.loc[admin, f"{tmr}|AEZ2"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['good'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ3"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['good'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ3"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['prime'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ4"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['good'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ4"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['prime'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ5"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['marginal'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ6"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['marginal'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ7"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['forest'], soil_health['marginal'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ8"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['prime'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ9"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['good'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ10"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['good'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ10"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['prime'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ11"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['good'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ11"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['prime'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ12"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['marginal'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ13"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['marginal'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ14"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['grassland'], soil_health['marginal'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ15"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['prime'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ16"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['good'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ17"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['good'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ17"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['prime'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ18"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['good'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ18"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['prime'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ19"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['marginal'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ20"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['marginal'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ21"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_irrigated'], soil_health['marginal'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ22"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['prime'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ23"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['good'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ24"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['good'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ24"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['prime'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ25"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['good'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ25"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['prime'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ26"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['marginal'], slope['minimal']))].sum()
-    df.loc[admin, f"{tmr}|AEZ27"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['marginal'], slope['moderate']))].sum()
-    df.loc[admin, f"{tmr}|AEZ28"] += km2_blk[np.logical_and.reduce((regime[tmr],
-        land_use['cropland_rainfed'], soil_health['marginal'], slope['steep']))].sum()
-    df.loc[admin, f"{tmr}|AEZ29"] += km2_blk[np.logical_and(regime[tmr],
-        np.logical_or.reduce((
-            land_use['bare'], land_use['water'], land_use['ice'], land_use['urban'],
-            soil_health['bare'], soil_health['water'])))].sum()
+def yield_AEZs(regime, tmr, slope, land_use, soil_health):
+    # AEZ1: Forest, prime, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        soil_health['prime'], slope['minimal']))
+    # AEZ2: Forest, good, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        soil_health['good'], slope['minimal']))
+    # AEZ3: Forest, good, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    # AEZ4: Forest, good, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    # AEZ5: Forest, marginal, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        soil_health['marginal'], slope['minimal']))
+    # AEZ6: Forest, marginal, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        soil_health['marginal'], slope['moderate']))
+    # AEZ7: Forest, marginal, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
+        soil_health['marginal'], slope['steep']))
+    # AEZ8: Grassland, prime, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        soil_health['prime'], slope['minimal']))
+    # AEZ9: Grassland, good, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        soil_health['good'], slope['minimal']))
+    # AEZ10: Grassland, good, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    # AEZ11: Grassland, good, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    # AEZ12: Grassland, marginal, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        soil_health['marginal'], slope['minimal']))
+    # AEZ13: Grassland, marginal, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        soil_health['marginal'], slope['moderate']))
+    # AEZ14: Grassland, marginal, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
+        soil_health['marginal'], slope['steep']))
+    # AEZ15: Irrigated Cropland, prime, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        soil_health['prime'], slope['minimal']))
+    # AEZ16: Irrigated Cropland, good, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        soil_health['good'], slope['minimal']))
+    # AEZ17: Irrigated Cropland, good, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    # AEZ18: Irrigated Cropland, good, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    # AEZ19: Irrigated Cropland, marginal, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        soil_health['marginal'], slope['minimal']))
+    # AEZ20: Irrigated Cropland, marginal, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        soil_health['marginal'], slope['moderate']))
+    # AEZ21: Irrigated Cropland, marginal, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
+        soil_health['marginal'], slope['steep']))
+    # AEZ22: Rainfed Cropland, prime, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        soil_health['prime'], slope['minimal']))
+    # AEZ23: Rainfed Cropland, good, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        soil_health['good'], slope['minimal']))
+    # AEZ24: Rainfed Cropland, good, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    # AEZ25: Rainfed Cropland, good, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    # AEZ26: Rainfed Cropland, marginal, minimal
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        soil_health['marginal'], slope['minimal']))
+    # AEZ27: Rainfed Cropland, marginal, moderate
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        soil_health['marginal'], slope['moderate']))
+    # AEZ28: Rainfed Cropland, marginal, steep
+    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
+        soil_health['marginal'], slope['steep']))
+    # AEZ29: All Barren Land
+    yield np.logical_and(regime[tmr], np.logical_or.reduce((land_use['bare'],
+        land_use['ice'], land_use['urban'], soil_health['bare'])))
 
 
-def produce_aez_csv_file():
+def produce_aez_csv():
     """Produce a CSV file of Thermal Moisture Regime + Agro-Ecological Zone per country."""
-    tmr_names = ['tropical-humid', 'arid', 'tropical-semiarid', 'temperate/boreal-humid',
-                 'temperate/boreal-semiarid', 'arctic']
     columns = []
-    for tmr in tmr_names:
-        columns.extend([f"{tmr}|AEZ{x}" for x in range(0, 30)])
+    for tmr in tmr_state.keys():
+        columns.extend([f"{tmr}|AEZ{x}" for x in range(1, 30)])
     df = pd.DataFrame(columns=columns, dtype='float')
     df.index.name = 'Country'
 
@@ -238,72 +281,39 @@ def produce_aez_csv_file():
                 wk_blk = np.repeat(np.repeat(w, 3, axis=1), 3, axis=0)
                 soil_health = populate_soil_health(wk_blk)
 
-                for tmr in tmr_names:
-                    populate_aez(df=df, admin=admin, km2_blk=km2_blk, regime=regime, tmr=tmr,
-                            slope=slope, land_use=land_use, soil_health=soil_health)
+                for tmr in tmr_state.keys():
+                    n = 1
+                    for aez in yield_AEZs(regime, tmr, slope, land_use, soil_health):
+                        df.loc[admin, f"{tmr}|AEZ{n}"] += (km2_blk[aez]).sum()
+                        n += 1
 
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
 
-# color table entries
-C_TMR_TRHU = 1  # tropical-humid
-C_TMR_ARID = 2  # arid
-C_TMR_TRSA = 3  # tropical-semiarid
-C_TMR_TBHU = 4  # temperate/boreal-humid
-C_TMR_TBSA = 5  # temperate/boreal-semiarid
-C_TMR_ARTC = 6  # arctic
-C_TMR_INVD = 7  # invalid
-C_SLP_MIN  = 8  # minimal slope
-C_SLP_MOD  = 9  # moderate slope
-C_SLP_STP  = 10 # steep slope
-C_LUS_FRST = 11 # forest
-C_LUS_CRRF = 12 # cropland, rainfed
-C_LUS_CRIR = 13 # cropland, irrigated
-C_LUS_GRSS = 14 # grassland
-C_LUS_BARE = 15 # bare land
-C_LUS_URBN = 16 # urban
-C_LUS_WATR = 17 # water
-C_LUS_ICE  = 18 # ice
-C_SLH_PRME = 19 # prime
-C_SLH_GOOD = 20 # good
-C_SLH_MRGN = 21 # marginal
- 
-C_BLANK = 255   # blank
-
-# TIFF Band numbering
-B_TMR = 1        # Thermal-Moisture Regime
-B_SLP = 2        # slope
-B_LUS = 3        # land use
-B_SLH = 4        # soil health
-
 def create_output_GeoTIFF(ref_img, filename):
     drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
-    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=2,
-            eType=osgeo.gdal.GDT_Byte, options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2',
-                'PHOTOMETRIC=MINISBLACK'])
+    # LZMA:    159492702 bytes
+    # DEFLATE: 158298535 bytes
+    # ZSTD:    151202552 bytes (but not compatible with most non-GDAL 2.3+ TIFF apps)
+    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=1,
+            eType=osgeo.gdal.GDT_Byte, options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2'])
     out.SetProjection(ref_img.GetProjectionRef())
     out.SetGeoTransform(ref_img.GetGeoTransform())
-    colors = osgeo.gdal.ColorTable()
 
-    # Thermal Moisture Regime
-    colors.SetColorEntry(C_TMR_TRHU, (49,113,35))    # tropical-humid == deep green
-    colors.SetColorEntry(C_TMR_ARID, (255,225,128))  # arid == yellow
-    colors.SetColorEntry(C_TMR_TRSA, (201,97,165))   # tropical-semiarid == pinkish
-    colors.SetColorEntry(C_TMR_TBHU, (99,222,123))   # temperate/boreal-humid == light green
-    colors.SetColorEntry(C_TMR_TBSA, (187,88,62))    # temperate/boreal-semiarid == umber
-    colors.SetColorEntry(C_TMR_ARTC, (240,240,248))  # arctic == off-white
-    colors.SetColorEntry(C_TMR_INVD, (101,60,123))   # invalid = purple
-    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
-    band = out.GetRasterBand(1)
-    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+    colors = osgeo.gdal.ColorTable()
+    colors.SetColorEntry(C_BLANK, (0,0,0))
+
+    colors.CreateColorRamp(C_TMR_TRHU, (0,128,0),   C_TMR_TRHU+29, (0,255,0))
+    colors.CreateColorRamp(C_TMR_ARID, (128,128,0), C_TMR_ARID+29, (255,255,0))
+    colors.CreateColorRamp(C_TMR_TRSA, (0,0,128),   C_TMR_TRSA+29, (0,0,255))
+    colors.CreateColorRamp(C_TMR_TBHU, (128,0,0),   C_TMR_TBHU+29, (255,0,0))
+    colors.CreateColorRamp(C_TMR_TBSA, (128,0,128), C_TMR_TBSA+29, (255,0,255))
+    colors.CreateColorRamp(C_TMR_ARTC, (64,64,64),  C_TMR_ARTC+29, (192,192,192))
 
     # Slope
     colors.SetColorEntry(C_SLP_MIN,  (32, 64, 32))   # minimal slope == light blue
     colors.SetColorEntry(C_SLP_MOD,  (32, 64, 96))   # moderate slope == medium blue
     colors.SetColorEntry(C_SLP_STP,  (32, 64, 240))  # steep slope == deep blue
-    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
-    band = out.GetRasterBand(2)
-    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
 
     # Land Use
     colors.SetColorEntry(C_LUS_FRST, (49,113,35))   # forest == deep green
@@ -314,20 +324,15 @@ def create_output_GeoTIFF(ref_img, filename):
     colors.SetColorEntry(C_LUS_URBN, (198,198,218)) # urban == light steel grey
     colors.SetColorEntry(C_LUS_WATR, (128,128,240)) # water == blue
     colors.SetColorEntry(C_LUS_ICE,  (240,240,248)) # ice == off-white
-    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
-    #band = out.GetRasterBand(3)
-    #band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
 
     # Soil Health
     colors.SetColorEntry(C_SLH_PRME, (49,113,35))   # prime == dark brown
     colors.SetColorEntry(C_SLH_GOOD, (212,145,0))   # good == light brown
     colors.SetColorEntry(C_SLH_MRGN, (173,13,2))    # marginal == reddish brown
-    colors.SetColorEntry(C_BLANK, (0,0,0))          # blank
-    #band = out.GetRasterBand(4)
-    #band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
 
     band = out.GetRasterBand(1)
     band.SetRasterColorTable(colors)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
 
     return out
 
@@ -347,49 +352,50 @@ def produce_aez_GeoTIFF():
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
-    out = create_output_GeoTIFF(ref_img=kg_img, filename='results/AEZ.tif')
+    out = create_output_GeoTIFF(ref_img=lc_img, filename='results/AEZ.tif')
 
-    x_siz = kg_band.XSize
-    y_siz = kg_band.YSize
-    x_blksiz, y_blksiz = (256, 256)
+    x_siz = lc_band.XSize
+    y_siz = lc_band.YSize
+    x_blksiz, y_blksiz = (768, 768)
 
     for y in range(0, y_siz, y_blksiz):
         print('.', end='')
         nrows = geoutil.blklim(coord=y, blksiz=y_blksiz, totsiz=y_siz)
         for x in range(0, x_siz, x_blksiz):
             ncols = geoutil.blklim(coord=x, blksiz=x_blksiz, totsiz=x_siz)
+            outarray = np.full((nrows, ncols), C_BLANK)
 
-            kg_blk = kg_band.ReadAsArray(x, y, ncols, nrows)
+            x3 = int(x/3)
+            y3 = int(y/3)
+            ncols3 = int(ncols/3)
+            nrows3 = int(nrows/3)
+
+            k = kg_band.ReadAsArray(x3, y3, ncols3, nrows3)
+            kg_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
             regime = populate_tmr(kg_blk)
-            outarray = np.full((nrows, ncols), C_BLANK)
-            outarray[regime['tropical-humid']] = C_TMR_TRHU
-            outarray[regime['arid']] = C_TMR_ARID
-            outarray[regime['tropical-semiarid']] = C_TMR_TRSA
-            outarray[regime['temperate/boreal-semiarid']] = C_TMR_TBSA
-            outarray[regime['temperate/boreal-humid']] = C_TMR_TBHU
-            outarray[regime['arctic']] = C_TMR_ARTC
-            outarray[regime['invalid']] = C_TMR_INVD
-            out.GetRasterBand(B_TMR).WriteArray(outarray, xoff=x, yoff=y)
 
-            sl_blk = sl_band.ReadAsArray(x, y, ncols, nrows)
+            k = sl_band.ReadAsArray(x3, y3, ncols3, nrows3)
+            sl_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
             slope = populate_slope(sl_blk)
-            outarray = np.full((nrows, ncols), C_BLANK)
-            outarray[slope['minimal']] = C_SLP_MIN
-            outarray[slope['moderate']] = C_SLP_MOD
-            outarray[slope['steep']] = C_SLP_STP
-            out.GetRasterBand(B_SLP).WriteArray(outarray, xoff=x, yoff=y)
 
-            lc_blk = lc_band.ReadAsArray(3*x, 3*y, 3*ncols, 3*nrows)
+            lc_blk = lc_band.ReadAsArray(x, y, ncols, nrows)
             land_use = populate_land_use(lc_blk)
 
-            wk_blk = wk_band.ReadAsArray(x, y, ncols, nrows)
+            k = wk_band.ReadAsArray(x3, y3, ncols3, nrows3)
+            wk_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
             soil_health = populate_soil_health(wk_blk)
 
+            for tmr, color in tmr_state.items():
+                for aez in yield_AEZs(regime, tmr, slope, land_use, soil_health):
+                    outarray[aez] = color
+                    color += 1
+
+            out.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
     out = None
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
-    produce_aez_csv_file()
-    #produce_aez_GeoTIFF()
+    produce_aez_csv()
+    produce_aez_GeoTIFF()
