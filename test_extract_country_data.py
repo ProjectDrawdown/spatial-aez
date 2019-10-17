@@ -66,7 +66,7 @@ def test_world_land_cover_vs_excel_esa():
 @pytest.mark.skip(reason="Spatial result differs substantially from GAEZ 3.0")
 def test_country_slope_vs_excel():
     df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
-    gaez = pd.DataFrame(gaez_slopes[1:], columns=gaez_slopes[0]).set_index('Country')
+    gaez = pd.DataFrame(excel_slopes[1:], columns=excel_slopes[0]).set_index('Country')
     for country, row in df.iterrows():
         continue
         if country in ['Greenland', 'Taiwan', 'Western Sahara']:
@@ -85,6 +85,41 @@ def test_country_slope_vs_excel():
             assert actual <= expected * 1000000
             assert actual >= expected * 0.1
 
+def test_slope_vs_GAEZ():
+    df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
+    gaez = pd.DataFrame(gaez_3_slopes[1:], columns=gaez_3_slopes[0]).set_index('Country')
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    gaez_region = pd.DataFrame(0, index=regions, columns=gaez.columns.copy())
+    for country, row in df.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+    for country, row in gaez.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            gaez_region.loc[region, :] += row
+
+    for region in gaez_region.index:
+        minimal = df_region.loc[region, ["0-0.5%", "0.5-2%", "2-5%", "5-10%"]].sum()
+        moderate = df_region.loc[region, ["10-15%", "15-30%"]].sum()
+        steep = df_region.loc[region, ["30-45%", ">45%"]].sum()
+
+    for region in gaez_region.index:
+        actual_minimal = df_region.loc[region, ["0-0.5%", "0.5-2%", "2-5%", "5-10%"]].sum()
+        expected_minimal = gaez_region.loc[region, "minimal"]
+        assert actual_minimal > expected_minimal * 0.8
+        assert actual_minimal < expected_minimal * 1.5
+        actual_moderate = df_region.loc[region, ["10-15%", "15-30%"]].sum()
+        expected_moderate = gaez_region.loc[region, "moderate"]
+        assert actual_moderate > expected_moderate * 0.4
+        assert actual_moderate < expected_moderate * 2.0
+        actual_steep = df_region.loc[region, ["30-45%", ">45%"]].sum()
+        expected_steep = gaez_region.loc[region, "steep"]
+        assert actual_steep > expected_steep * 0.06
+        assert actual_steep < expected_steep * 1.2
+
 
 @pytest.mark.skip(reason="Spatial result differs substantially from GAEZ 3.0")
 def test_regional_slope_vs_excel():
@@ -92,7 +127,7 @@ def test_regional_slope_vs_excel():
     df_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
         'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
         columns=df.columns.copy())
-    gaez_region = pd.DataFrame(gaez_regional_slopes[1:], columns=gaez_regional_slopes[0]).set_index('Region')
+    gaez_region = pd.DataFrame(excel_regional_slopes[1:], columns=excel_regional_slopes[0]).set_index('Region')
 
     for country, row in df.iterrows():
         region = region_mapping[country]
@@ -991,7 +1026,7 @@ gaez_land_areas = [
 
 
 # Slope data from "WORLD Land Data" tab of Afforestation Excel file of 6.2019
-gaez_slopes = [
+excel_slopes = [
     ["Country", "0-0.5%", "0.5-2%", "15-30%", "2-5%", "30-45%", "5-10%", "10-15%", ">45%", "Undefined", "Water"],
     ["Afghanistan",  682,  3827,  135575,  70448,  144666,  82193,  111672,  91515,  0,  1144],
     ["Albania",  5,  428,  7380,  1102,  14105,  667,  1486,  3015,  7,  236],
@@ -1192,7 +1227,7 @@ gaez_slopes = [
     ["Serbia",  0, 8069, 31493, 13911, 13661, 4400, 16092, 580, 0, 0],
     ["Egypt",  38744, 59358, 114628, 110309, 26954, 251709, 369800, 7963, 12, 4178]]
 
-gaez_regional_slopes = [
+excel_regional_slopes = [
     ["Region", "minimal", "moderate", "steep"],
     ["OECD90", 19627570, 9109168, 2634982],
     ["Eastern Europe", 12784219, 8147218, 1923724],
@@ -1203,7 +1238,179 @@ gaez_regional_slopes = [
     ["India", 2115386, 672233, 194111],
     ["EU", 1932127, 1863591, 441280],
     ["USA", 4679152, 3525854, 1024266]]
- 
+
+# Data from http://www.gaez.iiasa.ac.at
+gaez_3_slopes = [
+    ["Country", "minimal", "moderate", "steep"],
+    ["Afghanistan",307752,160287.5,173110.5],
+    ["Albania",7870.2,11199.9,11502.6],
+    ["Algeria",2070015.4,186068.8,23258.6],
+    ["Angola",1127558.8,114022.8,12669.2],
+    ["Argentina",2329278.8,280636,168381.6],
+    ["Armenia",11301.2,10409,8029.8],
+    ["Australia",7335737.7,394394.5,78878.9],
+    ["Austria",27512.1,23343.6,32514.3],
+    ["Azerbaijan",55855.8,19819.8,13513.5],
+    ["Bahamas",32267.2,0,0],
+    ["Bangladesh",138415,5890,1472.5],
+    ["Belarus",204256.8,2063.2,0],
+    ["Belgium",27278.5,3065,306.5],
+    ["Belize",20717.6,3816.4,1090.4],
+    ["Benin",114062.2,2327.8,0],
+    ["Bhutan",1136.7,5683.5,30690.9],
+    ["Bolivia",807562,141869,141869],
+    ["Bosnia and Herzegovina",16846.5,22972.5,11231],
+    ["Botswana",581400,0,0],
+    ["Brazil",7138589.3,1204099.4,258021.3],
+    ["Bulgaria",63840,34720,14560],
+    ["Burkina Faso",272408.4,0,0],
+    ["Burundi",10720,12596,3216],
+    ["Cambodia",163970.4,18633,5589.9],
+    ["Cameroon",372872.1,84958.2,18879.6],
+    ["Canada",7245379.6,2245047.2,714333.2],
+    ["Central African Republic",593056.5,24970.8,0],
+    ["Chad",1200069.8,51066.8,12766.7],
+    ["Chile",350238.4,230644.8,247729.6],
+    ["China",5193166,2266108.8,1888424],
+    ["Colombia",834544.8,173863.5,162272.6],
+    ["Congo",1991762.5,328055,23432.5],
+    #["Congo",286159.1,55163.2,3447.7],
+    ["Costa Rica",28645.4,18707.2,10522.8],
+    ["Côte d'Ivoire",306825.4,16320.5,3264.1],
+    ["Croatia",39161.6,20931.2,6752],
+    ["Cuba",120464.4,11472.8,4302.3],
+    ["Cyprus",6720,3600,1320],
+    ["Czech Republic",54733,21893.2,1563.8],
+    ["Denmark",54662.4,569.4,0],
+    ["Djibouti",15403.3,5287.7,2069.1],
+    ["Dominican Republic",32774.5,14443,7777],
+    ["Ecuador",135595,73221.3,59661.8],
+    ["Egypt",909590.5,59973,19991],
+    ["El Salvador",11188.8,8391.6,3263.4],
+    ["Equatorial Guinea",19046.4,8630.4,2083.2],
+    ["Eritrea",85772.8,26804,20103],
+    ["Estonia",49896.8,514.4,0],
+    ["Ethiopia",750624.6,261581.3,113731],
+    ["Fiji",13209,14637,4641],
+    ["Finland",247442.1,97582.8,0],
+    ["France",410698,101268,45008],
+    ["French Guiana",57566.4,26635.2,859.2],
+    ["French Polynesia",14658.8,2819,3382.8],
+    ["Gabon",176533.5,84192.9,8147.7],
+    ["Gambia",11475.8,0,0],
+    ["Georgia",21348,19213.2,29887.2],
+    ["Germany",291000,58200,10912.5],
+    ["Ghana",225813.3,14568.6,2428.1],
+    ["Greece",62940.5,66537.1,43159.2],
+    ["Greenland",1809005.4,312667.6,67000.2],
+    ["Guatemala",60420.6,31329.2,21259.1],
+    ["Guinea",191522.1,52233.3,7461.9],
+    ["Guinea-Bissau",39100.8,407.3,0],
+    ["Guyana",172272,36607.8,6460.2],
+    ["Haiti",14271.6,11893,6796],
+    ["Honduras",45094.6,43907.9,28480.8],
+    ["Hungary",82414,9260,926],
+    ["Iceland",37973.1,54082.9,20712.6],
+    ["India",2575593.5,272709.9,181806.6],
+    ["Indonesia",1348539.2,530572.8,309500.8],
+    ["Iran",1081245,360415,196590],
+    ["Iraq",410065.6,17449.6,8724.8],
+    ["Ireland",62743.2,12870.4,2413.2],
+    ["Israel",16155,4523.4,646.2],
+    ["Italy",144984.4,105443.2,75787.3],
+    ["Jamaica",6744,5198.5,1686],
+    ["Japan",157531.5,157531.5,117023.4],
+    ["Jordan",78311.2,8009.1,2669.7],
+    ["Kazakhstan",2558153.6,108857.6,54428.8],
+    ["Kenya",517809.6,52957.8,17652.6],
+    ["Democratic People's Republic of Korea",32495,48092.6,46792.8],
+    ["South Korea",38857.6,44929.1,31571.8],
+    ["Kuwait",18671.4,0,0],
+    ["Kyrgyzstan",49760,53740.8,93548.8],
+    ["Lao PDR",74108.8,81056.5,76424.7],
+    ["Latvia",64835.1,1309.8,0],
+    ["Lebanon",3962,5094,2377.2],
+    ["Lesotho",5825.4,13183.8,11650.8],
+    ["Liberia",82236.4,15852.8,990.8],
+    ["Libya",1562928,48841.5,0],
+    ["Lithuania",63651,649.5,0],
+    ["Macedonia",7632,10430.4,7377.6],
+    ["Madagascar",385646.2,186603,49760.8],
+    ["Malawi",94920,17797.5,4746],
+    ["Malaysia",186898.4,111420.2,57507.2],
+    ["Mali",1232800.8,25159.2,0],
+    ["Mauritania",1036579.5,10470.5,0],
+    ["Mexico",1216956,466499.8,304239],
+    ["Moldova",26504.5,7381,0],
+    ["Mongolia",1136887.4,327049.8,93442.8],
+    ["Montenegro",3367.2,6032.9,4629.9],
+    ["Morocco",273490.8,99451.2,45581.8],
+    ["Mozambique",743976.4,48520.2,16173.4],
+    ["Myanmar",330668.5,196994,182923],
+    ["Namibia",758921.8,58378.6,25019.4],
+    ["Nepal",31012.8,26582.4,90084.8],
+    ["Netherlands",39062.8,0,0],
+    ["New Caledonia",13160.4,8075.7,6580.2],
+    ["New Zealand",110329.2,95005.7,91941],
+    ["Nicaragua",94311,32335.2,8083.8],
+    ["Niger",1164828,23772,0],
+    ["Nigeria",863775.4,36756.4,18378.2],
+    ["Norway",66403.8,191833.2,106983.9],
+    ["Oman",274959.2,31972,15986],
+    ["Pakistan",601200,112224,88176],
+    ["Panama",45260,29871.6,13578],
+    ["Papua New Guinea",272452.2,138897.2,117528.4],
+    ["Paraguay",396782.1,4007.9,0],
+    ["Peru",710267.4,289368.2,315674.4],
+    ["Philippines",188925.9,124610.7,72354.6],
+    ["Poland",290373.9,15611.5,3122.3],
+    ["Portugal",57739.5,27495,5499],
+    ["Puerto Rico",6523.2,3986.4,1208],
+    ["Qatar",13465.2,0,0],
+    ["Romania",135511.8,73699.4,28528.8],
+    ["Russian Federation",10365327.4,5097702,1189463.8],
+    ["Rwanda",9104.4,11886.3,4552.2],
+    ["Saudi Arabia",1739861,156392,58647],
+    ["Senegal",198960.3,0,0],
+    ["Serbia",46735.4,29099.4,12345.2],
+    ["Sierra Leone",58758.7,13735.8,3052.4],
+    ["Slovakia",23366.4,18011.6,7302],
+    ["Slovenia",6600,8200,5200],
+    ["Solomon Islands",24763.2,18009.6,9004.8],
+    ["Somalia",607169.1,32643.5,13057.4],
+    ["South Africa",990272,198054.4,61892],
+    ["South Sudan",614718.1,12674.6,0],
+    ["Spain",305787.6,152893.8,63266.4],
+    ["Sri Lanka",59464,9662.9,4459.8],
+    ["Sudan",1809690.2,55969.8,18656.6],
+    ["Suriname",116251.2,28317.6,4471.2],
+    #["Svalbard and Jan Mayen Isl",26027,35213,13013.5],
+    ["Swaziland",9997.8,6314.4,1403.2],
+    ["Sweden",241810.4,199958.6,18600.8],
+    ["Switzerland",10618.4,11026.8,19194.8],
+    ["Syrian Arab Republic",173447.6,11311.8,1885.3],
+    ["Tajikistan",32574.9,33991.2,76480.2],
+    ["Tanzania",812234.5,114668.4,28667.1],
+    ["Thailand",370219.5,101944.5,59020.5],
+    ["Timor-Leste",5932.8,8713.8,3522.6],
+    ["Togo",53369.2,4060.7,580.1],
+    ["Tunisia",140792.1,16183,1618.3],
+    ["Turkey",345646.9,305455.4,152727.7],
+    ["Turkmenistan",467951,19703.2,4925.8],
+    ["Uganda",208885.4,26717.9,7286.7],
+    ["Ukraine",559258.8,36473.4,6078.9],
+    ["United Arab Emirates",72208.5,3967.5,1587],
+    ["United Kingdom",198253.3,64222.9,13961.5],
+    ["United States of America",6476782.4,2000182.8,952468],
+    ["Uruguay",173166,5468.4,0],
+    ["Uzbekistan",407470.7,22388.5,17910.8],
+    ["Vanuatu",11601,7991.8,4382.6],
+    ["Venezuela",685148.8,178326.4,75084.8],
+    ["Viet Nam",170941.4,90703.6,87215],
+    ["Yemen",310939.2,108357.6,56534.4],
+    ["Zambia",709737.6,30201.6,7550.4],
+    ["Zimbabwe",349058,35298,11766]]
+
 gaez_tropical_humid = [
     ["Region", "total", "tropical-humid|AEZ1", "tropical-humid|AEZ2", "tropical-humid|AEZ3", "tropical-humid|AEZ4", "tropical-humid|AEZ5", "tropical-humid|AEZ6", "tropical-humid|AEZ7", "tropical-humid|AEZ8", "tropical-humid|AEZ9", "tropical-humid|AEZ10", "tropical-humid|AEZ11", "tropical-humid|AEZ12", "tropical-humid|AEZ13", "tropical-humid|AEZ14", "tropical-humid|AEZ15", "tropical-humid|AEZ16", "tropical-humid|AEZ17", "tropical-humid|AEZ18", "tropical-humid|AEZ19", "tropical-humid|AEZ20", "tropical-humid|AEZ21", "tropical-humid|AEZ22", "tropical-humid|AEZ23", "tropical-humid|AEZ24", "tropical-humid|AEZ25", "tropical-humid|AEZ26", "tropical-humid|AEZ27", "tropical-humid|AEZ28", "tropical-humid|AEZ29"],
     ["OECD90", 520108, 52651, 52287, 24266, 7019, 19183, 8903, 2575, 80227, 79671, 36976, 10696, 29231, 13566, 3924, 304, 302, 140, 40, 111, 51, 15, 6544, 6498, 3016, 872, 2384, 1106, 320, 77229],
