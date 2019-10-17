@@ -8,6 +8,7 @@ import math
 import os.path
 import pdb
 import signal
+import subprocess
 import sys
 import tempfile
 
@@ -35,22 +36,29 @@ C_TMR_TRSA =  60  # tropical-semiarid
 C_TMR_TBHU =  90  # temperate/boreal-humid
 C_TMR_TBSA = 120  # temperate/boreal-semiarid
 C_TMR_ARTC = 150  # arctic
-C_SLP_MIN  = 207  # minimal slope
-C_SLP_MOD  = 208  # moderate slope
-C_SLP_STP  = 209  # steep slope
-C_LUS_FRST = 210  # forest
-C_LUS_CRRF = 211  # cropland, rainfed
-C_LUS_CRIR = 212  # cropland, irrigated
-C_LUS_GRSS = 213  # grassland
-C_LUS_BARE = 214  # bare land
-C_LUS_URBN = 215  # urban
-C_LUS_WATR = 216  # water
-C_LUS_ICE  = 217  # ice
-C_SLH_PRME = 218  # prime
-C_SLH_GOOD = 219  # good
-C_SLH_MRGN = 220  # marginal
- 
-C_BLANK = 255     # blank
+C_TMR_BLNK = 255
+
+C_SLP_MIN  =   0  # minimal slope
+C_SLP_MOD  =   1  # moderate slope
+C_SLP_STP  =   2  # steep slope
+C_SLP_BLNK =   3
+
+C_LUS_FRST =   0  # forest
+C_LUS_CRRF =   1  # cropland, rainfed
+C_LUS_CRIR =   2  # cropland, irrigated
+C_LUS_GRSS =   3  # grassland
+C_LUS_BARE =   4  # bare land
+C_LUS_URBN =   5  # urban
+C_LUS_WATR =   6  # water
+C_LUS_ICE  =   7  # ice
+C_LUS_BLNK =   8
+
+C_SLH_PRME =   0  # prime
+C_SLH_GOOD =   1  # good
+C_SLH_MRGN =   2  # marginal
+C_SLH_BARE =   4  # bare
+C_SLH_WATR =   5  # water
+C_SLH_BLNK =   6
 
 tmr_state = {
         'tropical-humid': C_TMR_TRHU,
@@ -212,7 +220,7 @@ def yield_AEZs(regime, tmr, slope, land_use, soil_health):
         land_use['ice'], land_use['urban'], soil_health['bare'])))
 
 
-def produce_aez_csv():
+def produce_CSV():
     """Produce a CSV file of Thermal Moisture Regime + Agro-Ecological Zone per country."""
     columns = []
     for tmr in tmr_state.keys():
@@ -290,7 +298,7 @@ def produce_aez_csv():
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
 
 
-def create_output_GeoTIFF(ref_img, filename):
+def create_AEZ_GeoTIFF(ref_img, filename):
     drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
     # LZMA:    159492702 bytes
     # DEFLATE: 158298535 bytes
@@ -301,7 +309,7 @@ def create_output_GeoTIFF(ref_img, filename):
     out.SetGeoTransform(ref_img.GetGeoTransform())
 
     colors = osgeo.gdal.ColorTable()
-    colors.SetColorEntry(C_BLANK, (0,0,0))
+    colors.SetColorEntry(C_TMR_BLNK, (0,0,0))
 
     colors.CreateColorRamp(C_TMR_TRHU, (0,128,0),   C_TMR_TRHU+29, (0,255,0))
     colors.CreateColorRamp(C_TMR_ARID, (128,128,0), C_TMR_ARID+29, (255,255,0))
@@ -310,12 +318,43 @@ def create_output_GeoTIFF(ref_img, filename):
     colors.CreateColorRamp(C_TMR_TBSA, (128,0,128), C_TMR_TBSA+29, (255,0,255))
     colors.CreateColorRamp(C_TMR_ARTC, (64,64,64),  C_TMR_ARTC+29, (192,192,192))
 
-    # Slope
+    band = out.GetRasterBand(1)
+    band.SetRasterColorTable(colors)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    return out
+
+def create_slope_GeoTIFF(ref_img, filename):
+    drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
+    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=1,
+            eType=osgeo.gdal.GDT_Byte,
+            options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2', 'NBITS=2'])
+    out.SetProjection(ref_img.GetProjectionRef())
+    out.SetGeoTransform(ref_img.GetGeoTransform())
+
+    colors = osgeo.gdal.ColorTable()
+    colors.SetColorEntry(C_SLP_BLNK, (0,0,0))
     colors.SetColorEntry(C_SLP_MIN,  (32, 64, 32))   # minimal slope == light blue
     colors.SetColorEntry(C_SLP_MOD,  (32, 64, 96))   # moderate slope == medium blue
     colors.SetColorEntry(C_SLP_STP,  (32, 64, 240))  # steep slope == deep blue
 
-    # Land Use
+    band = out.GetRasterBand(1)
+    band.SetRasterColorTable(colors)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    return out
+
+
+def create_land_use_GeoTIFF(ref_img, filename):
+    drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
+    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=1,
+            eType=osgeo.gdal.GDT_Byte,
+            options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2', 'NBITS=4'])
+    out.SetProjection(ref_img.GetProjectionRef())
+    out.SetGeoTransform(ref_img.GetGeoTransform())
+
+    colors = osgeo.gdal.ColorTable()
+    colors.SetColorEntry(C_LUS_BLNK, (0,0,0))
     colors.SetColorEntry(C_LUS_FRST, (49,113,35))   # forest == deep green
     colors.SetColorEntry(C_LUS_CRRF, (245,237,7))   # cropland_rainfed == yellow
     colors.SetColorEntry(C_LUS_CRIR, (227,175,18))  # cropland_irrigated == orange
@@ -325,10 +364,28 @@ def create_output_GeoTIFF(ref_img, filename):
     colors.SetColorEntry(C_LUS_WATR, (128,128,240)) # water == blue
     colors.SetColorEntry(C_LUS_ICE,  (240,240,248)) # ice == off-white
 
-    # Soil Health
+    band = out.GetRasterBand(1)
+    band.SetRasterColorTable(colors)
+    band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
+
+    return out
+
+
+def create_soil_health_GeoTIFF(ref_img, filename):
+    drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
+    out = drv.Create(filename, xsize=ref_img.RasterXSize, ysize=ref_img.RasterYSize, bands=1,
+            eType=osgeo.gdal.GDT_Byte,
+            options = ['COMPRESS=DEFLATE', 'TILED=YES', 'NUM_THREADS=2', 'NBITS=3'])
+    out.SetProjection(ref_img.GetProjectionRef())
+    out.SetGeoTransform(ref_img.GetGeoTransform())
+
+    colors = osgeo.gdal.ColorTable()
+    colors.SetColorEntry(C_SLH_BLNK, (0,0,0))
     colors.SetColorEntry(C_SLH_PRME, (49,113,35))   # prime == dark brown
     colors.SetColorEntry(C_SLH_GOOD, (212,145,0))   # good == light brown
     colors.SetColorEntry(C_SLH_MRGN, (173,13,2))    # marginal == reddish brown
+    colors.SetColorEntry(C_SLH_BARE, (80,80,80))    # bare == dark grey
+    colors.SetColorEntry(C_SLH_WATR, (128,128,240)) # water == blue
 
     band = out.GetRasterBand(1)
     band.SetRasterColorTable(colors)
@@ -337,7 +394,7 @@ def create_output_GeoTIFF(ref_img, filename):
     return out
 
 
-def produce_aez_GeoTIFF():
+def produce_GeoTIFF():
     """Produce a GeoTIFF file of Thermal Moisture Regime + Agro-Ecological Zone."""
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
@@ -352,18 +409,20 @@ def produce_aez_GeoTIFF():
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
-    out = create_output_GeoTIFF(ref_img=lc_img, filename='results/AEZ.tif')
+    aez_f = create_AEZ_GeoTIFF(ref_img=lc_img, filename='results/AEZ.tif')
+    slope_f = create_slope_GeoTIFF(ref_img=lc_img, filename='results/Slope.tif')
+    land_use_f = create_land_use_GeoTIFF(ref_img=lc_img, filename='results/LandUse.tif')
+    soil_health_f = create_soil_health_GeoTIFF(ref_img=lc_img, filename='results/SoilHealth.tif')
 
     x_siz = lc_band.XSize
     y_siz = lc_band.YSize
     x_blksiz, y_blksiz = (768, 768)
 
     for y in range(0, y_siz, y_blksiz):
-        print('.', end='')
+        print('.', end='', flush=True)
         nrows = geoutil.blklim(coord=y, blksiz=y_blksiz, totsiz=y_siz)
         for x in range(0, x_siz, x_blksiz):
             ncols = geoutil.blklim(coord=x, blksiz=x_blksiz, totsiz=x_siz)
-            outarray = np.full((nrows, ncols), C_BLANK)
 
             x3 = int(x/3)
             y3 = int(y/3)
@@ -385,17 +444,58 @@ def produce_aez_GeoTIFF():
             wk_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
             soil_health = populate_soil_health(wk_blk)
 
+            outarray = np.full((nrows, ncols), C_TMR_BLNK)
             for tmr, color in tmr_state.items():
                 for aez in yield_AEZs(regime, tmr, slope, land_use, soil_health):
                     outarray[aez] = color
                     color += 1
+            aez_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
-            out.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
-    out = None
+            outarray = np.full((nrows, ncols), C_SLP_BLNK)
+            outarray[slope['minimal']] = C_SLP_MIN
+            outarray[slope['moderate']] = C_SLP_MOD
+            outarray[slope['steep']] = C_SLP_STP
+            slope_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
+
+            outarray = np.full((nrows, ncols), C_LUS_BLNK)
+            outarray[land_use['forest']] = C_LUS_FRST
+            outarray[land_use['cropland_rainfed']] = C_LUS_CRRF
+            outarray[land_use['cropland_irrigated']] = C_LUS_CRIR
+            outarray[land_use['grassland']] = C_LUS_GRSS
+            outarray[land_use['bare']] = C_LUS_BARE
+            outarray[land_use['urban']] = C_LUS_URBN
+            outarray[land_use['water']] = C_LUS_WATR
+            outarray[land_use['ice']] = C_LUS_ICE
+            land_use_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
+
+            outarray = np.full((nrows, ncols), C_SLP_BLNK)
+            outarray[soil_health['prime']] = C_SLH_PRME
+            outarray[soil_health['good']] = C_SLH_GOOD
+            outarray[soil_health['marginal']] = C_SLH_MRGN
+            outarray[soil_health['bare']] = C_SLH_BARE
+            outarray[soil_health['water']] = C_SLH_WATR
+            soil_health_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
+
+    aez_f = None
+    slope_f = None
+    land_use_f = None
+    soil_health_f = None
+
+
+def produce_PNGs():
+    subprocess.run(args=['gdal_translate', '-of', 'png', '-expand', 'rgb', '-outsize', '1%', '0',
+        './results/AEZ.tif', './results/AEZ_small.png'])
+    subprocess.run(args=['gdal_translate', '-of', 'png', '-expand', 'rgb', '-outsize', '1%', '0',
+        './results/Slope.tif', './results/Slope_small.png'])
+    subprocess.run(args=['gdal_translate', '-of', 'png', '-expand', 'rgb', '-outsize', '1%', '0',
+        './results/SoilHealth.tif', './results/SoilHealth_small.png'])
+    subprocess.run(args=['gdal_translate', '-of', 'png', '-expand', 'rgb', '-outsize', '1%', '0',
+        './results/LandUse.tif', './results/LandUse_small.png'])
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
-    produce_aez_csv()
-    produce_aez_GeoTIFF()
+    produce_CSV()
+    produce_GeoTIFF()
+    produce_PNGs()
