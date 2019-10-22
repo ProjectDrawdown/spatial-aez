@@ -2,10 +2,12 @@
 
 Code in this repository extracts land area data from spatial maps for use in climate solution models.
 
-The output of this code is a series of CSV files, with a row per country and column
-per data class.  Names are normalized to those used in [Project Drawdown](https://drawdown.org).
-Data is calculated per country, correcting for WGS84 projection.
+The output of this code is:
++ a series of CSV files, with a row per country and column per data class.  Names are normalized to those used in [Project Drawdown](https://drawdown.org).  Data is calculated per country, correcting for WGS84 projection.  
++ GeoTIFF files of the Project Drawdown Thermal Moisture Regime + Agro-Ecological Zone, as well as files for each component which goes into the classification. In addtition, PNG files downsampled to 5% resolution are provided for easy web viewing.  
 
+
+## Data Sources
 Note that the data processed in this repository comes from external sources, most of which require
 attribution in the form of a citation of their contribution. Please see LICENSE.md for details and links.
 
@@ -30,7 +32,7 @@ Classified Slope GeoTIFF in data/geomorpho90m/classified\_slope\_merit\_dem\_1km
 
 
 ### Soil Workability
-Data comes from the [United Nations Food and Agriculture Organization sq7 ASC file](http://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/harmonized-world-soil-database-v12/en/), converted to GeoTIFF using a procedure described in data/FAO/README.txt.
+Data comes from the [United Nations Food and Agriculture Organization sq7 ASC file](http://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/harmonized-world-soil-database-v12/en/) retrieved 25 Sep 2019, converted to GeoTIFF using a procedure described in data/FAO/README.txt.
 
 
 ### Administrative Boundaries
