@@ -26,6 +26,7 @@ pd.set_option("display.max_columns", 40)
 pd.options.display.float_format = '{:.2f}'.format
 osgeo.gdal.PushErrorHandler("CPLQuietErrorHandler")
 np.set_printoptions(threshold=sys.maxsize)
+np.seterr(all='raise')
 
 
 
@@ -130,6 +131,31 @@ class GeomorphoLookup:
             masked = np.ma.masked_array(block, mask=mask, fill_value=0.0)
             typ = self.gaez_slopes[b - 1]
             df.loc[admin, typ] += (km2block * (masked / 100.0)).sum()
+
+    def get_columns(self):
+        """Return list of GAEZ slope classes."""
+        return self.gaez_slopes
+
+
+class FaoSlopeLookup:
+    """FAO GAEZ 3.0 slope files in data/FAO/GloSlopesCl*_30as.tif.
+    """
+    gaez_slopes = ["0-0.5%", "0.5-2%", "2-5%", "5-8%", "8-15%", "15-30%", "30-45%", ">45%"]
+
+    def __init__(self, maskdim='1km'):
+        self.maskdim = maskdim
+        self.img = {}
+        for i in range(1, 9):
+            mapfilename = f"data/FAO/GloSlopesCl{i}_30as.tif"
+            self.img[i] = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
+
+    def km2(self, x, y, ncols, nrows, maskblock, km2block, df, admin):
+        for i in range(1, 9):
+            block = self.img[i].GetRasterBand(1).ReadAsArray(x, y, ncols, nrows).astype(np.float)
+            mask = np.logical_or(np.logical_not(maskblock), block == 255)
+            masked = np.ma.masked_array(block, mask=mask).filled(0.0)
+            typ = self.gaez_slopes[i - 1]
+            df.loc[admin, typ] += np.nansum(km2block * (masked / 100.0))
 
     def get_columns(self):
         """Return list of GAEZ slope classes."""
@@ -261,7 +287,14 @@ if __name__ == '__main__':
         mapfilename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
         csvfilename = 'Slope-by-country.csv'
         print(mapfilename)
-        lookupobj = GeomorphoLookup(mapfilename=mapfilename)
+        #lookupobj = GeomorphoLookup(mapfilename=mapfilename)
+        #process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        print('\n')
+        processed = True
+
+        csvfilename = 'FAO-Slope-by-country.csv'
+        print('data/FAO/GloSlopesCl*_30as.tif')
+        lookupobj = FaoSlopeLookup()
         process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True

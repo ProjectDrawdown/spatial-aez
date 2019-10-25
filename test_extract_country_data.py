@@ -39,6 +39,9 @@ def test_country_areas_reasonable():
                     # boundary dispute between Russia and Norway in 2010 which added substantial
                     # Arctic territory to Norway. Just skip it.
                     continue
+                if 'fao-slope' in filename.lower() and country in ['Canada', 'Finland', 'Greenland',
+                        'Iceland', 'Norway', 'Russian Federation', 'Sweden']:
+                    continue
                 assert area > (expected * 0.76)
                 assert area < (expected * 1.07)
         print("\n")
@@ -64,11 +67,10 @@ def test_world_land_cover_vs_excel_esa():
 
 
 @pytest.mark.skip(reason="Spatial result differs substantially from GAEZ 3.0")
-def test_country_slope_vs_excel():
+def test_geomorpho_country_slope_vs_excel():
     df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
     gaez = pd.DataFrame(excel_slopes[1:], columns=excel_slopes[0]).set_index('Country')
     for country, row in df.iterrows():
-        continue
         if country in ['Greenland', 'Taiwan', 'Western Sahara']:
             # These countries are not in the Excel data
             continue
@@ -85,7 +87,8 @@ def test_country_slope_vs_excel():
             assert actual <= expected * 1000000
             assert actual >= expected * 0.1
 
-def test_slope_vs_GAEZ():
+
+def test_geomorpho_regional_slope_vs_GAEZ():
     df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
     gaez = pd.DataFrame(gaez_3_slopes[1:], columns=gaez_3_slopes[0]).set_index('Country')
     regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
@@ -100,11 +103,6 @@ def test_slope_vs_GAEZ():
         region = region_mapping[country]
         if region is not None:
             gaez_region.loc[region, :] += row
-
-    for region in gaez_region.index:
-        minimal = df_region.loc[region, ["0-0.5%", "0.5-2%", "2-5%", "5-10%"]].sum()
-        moderate = df_region.loc[region, ["10-15%", "15-30%"]].sum()
-        steep = df_region.loc[region, ["30-45%", ">45%"]].sum()
 
     for region in gaez_region.index:
         actual_minimal = df_region.loc[region, ["0-0.5%", "0.5-2%", "2-5%", "5-10%"]].sum()
@@ -122,7 +120,7 @@ def test_slope_vs_GAEZ():
 
 
 @pytest.mark.skip(reason="Spatial result differs substantially from GAEZ 3.0")
-def test_regional_slope_vs_excel():
+def test_geomorpho_regional_slope_vs_excel():
     df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
     df_region = pd.DataFrame(0, index=['OECD90', 'Eastern Europe', 'Asia (Sans Japan)',
         'Middle East and Africa', 'Latin America', 'China', 'India', 'EU', 'USA'],
@@ -149,6 +147,73 @@ def test_regional_slope_vs_excel():
         steep = df_region.loc[region, ["30-45%", ">45%"]].sum()
         assert steep < expected['steep'] * 1.6
         assert steep < expected['steep'] * 0.4
+
+
+def test_FAO_regional_slope_vs_GAEZ():
+    df = pd.read_csv('results/FAO-Slope-by-country.csv').set_index('Country')
+    gaez = pd.DataFrame(gaez_3_slopes[1:], columns=gaez_3_slopes[0]).set_index('Country')
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    gaez_region = pd.DataFrame(0, index=regions, columns=gaez.columns.copy())
+    for country, row in df.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+    for country, row in gaez.iterrows():
+        region = region_mapping[country]
+        if region is not None:
+            gaez_region.loc[region, :] += row
+
+    for region in gaez_region.index:
+        actual_minimal = df_region.loc[region, ["0-0.5%", "0.5-2%", "2-5%", "5-8%"]].sum()
+        expected_minimal = gaez_region.loc[region, "minimal"]
+        print(f"{region} minimal {actual_minimal} <> {expected_minimal}")
+        assert actual_minimal > expected_minimal * 0.35
+        assert actual_minimal < expected_minimal * 1.2
+        actual_moderate = df_region.loc[region, ["8-15%", "15-30%"]].sum()
+        expected_moderate = gaez_region.loc[region, "moderate"]
+        print(f"{region} moderate {actual_moderate} <> {expected_moderate}")
+        assert actual_moderate > expected_moderate * 0.35
+        assert actual_moderate < expected_moderate * 1.2
+        actual_steep = df_region.loc[region, ["30-45%", ">45%"]].sum()
+        expected_steep = gaez_region.loc[region, "steep"]
+        print(f"{region} steep {actual_steep} <> {expected_steep}")
+        assert actual_steep > expected_steep * 0.35
+        assert actual_steep < expected_steep * 1.2
+
+
+def test_FAO_country_slope_vs_GAEZ():
+    df = pd.read_csv('results/FAO-Slope-by-country.csv').set_index('Country')
+    gaez = pd.DataFrame(gaez_3_slopes[1:], columns=gaez_3_slopes[0]).set_index('Country')
+    for country, row in df.iterrows():
+        if country in ['Canada', 'Finland', 'Greenland', 'Iceland', 'Norway',
+                'Russian Federation', 'Sweden']:
+            continue  # Truncated at 60 degrees North.
+        if country in ['Cuba', 'Denmark', 'Morocco', 'Philippines', 'Western Sahara']:
+            continue
+        area = row.sum()
+        if area < 50000:
+            continue
+        margin = area * 0.16
+
+        actual_minimal = df.loc[country, ["0-0.5%", "0.5-2%", "2-5%", "5-8%"]].sum()
+        expected_minimal = gaez.loc[country, 'minimal']
+        print(f"{country}:minimal {actual_minimal} <> {expected_minimal}")
+        assert actual_minimal <= (expected_minimal + margin)
+        assert actual_minimal >= (expected_minimal - margin)
+
+        actual_moderate = df.loc[country, ["8-15%", "15-30%"]].sum()
+        expected_moderate = gaez.loc[country, 'moderate']
+        print(f"{country}:moderate {actual_moderate} <> {expected_moderate}")
+        assert actual_moderate <= (expected_moderate + margin)
+        assert actual_moderate >= (expected_moderate - margin)
+
+        actual_steep = df.loc[country, ["30-45%", ">45%"]].sum()
+        expected_steep = gaez.loc[country, 'steep']
+        print(f"{country}:steep {actual_steep} <> {expected_steep}")
+        assert actual_steep <= (expected_steep + margin)
+        assert actual_steep >= (expected_steep - margin)
 
 
 def test_AEZ_vs_excel():
@@ -1273,8 +1338,8 @@ gaez_3_slopes = [
     ["Chile",350238.4,230644.8,247729.6],
     ["China",5193166,2266108.8,1888424],
     ["Colombia",834544.8,173863.5,162272.6],
-    ["Congo",1991762.5,328055,23432.5],
-    #["Congo",286159.1,55163.2,3447.7],
+    ["Democratic Republic of the Congo",1991762.5,328055,23432.5],
+    ["Congo",286159.1,55163.2,3447.7],
     ["Costa Rica",28645.4,18707.2,10522.8],
     ["Côte d'Ivoire",306825.4,16320.5,3264.1],
     ["Croatia",39161.6,20931.2,6752],
@@ -1324,10 +1389,10 @@ gaez_3_slopes = [
     ["Kazakhstan",2558153.6,108857.6,54428.8],
     ["Kenya",517809.6,52957.8,17652.6],
     ["Democratic People's Republic of Korea",32495,48092.6,46792.8],
-    ["South Korea",38857.6,44929.1,31571.8],
+    ["Republic of Korea (South Korea)",38857.6,44929.1,31571.8],
     ["Kuwait",18671.4,0,0],
     ["Kyrgyzstan",49760,53740.8,93548.8],
-    ["Lao PDR",74108.8,81056.5,76424.7],
+    ["Lao People's Democratic Republic",74108.8,81056.5,76424.7],
     ["Latvia",64835.1,1309.8,0],
     ["Lebanon",3962,5094,2377.2],
     ["Lesotho",5825.4,13183.8,11650.8],
@@ -1390,7 +1455,7 @@ gaez_3_slopes = [
     ["Switzerland",10618.4,11026.8,19194.8],
     ["Syrian Arab Republic",173447.6,11311.8,1885.3],
     ["Tajikistan",32574.9,33991.2,76480.2],
-    ["Tanzania",812234.5,114668.4,28667.1],
+    ["United Republic of Tanzania",812234.5,114668.4,28667.1],
     ["Thailand",370219.5,101944.5,59020.5],
     ["Timor-Leste",5932.8,8713.8,3522.6],
     ["Togo",53369.2,4060.7,580.1],
@@ -1406,7 +1471,7 @@ gaez_3_slopes = [
     ["Uzbekistan",407470.7,22388.5,17910.8],
     ["Vanuatu",11601,7991.8,4382.6],
     ["Venezuela",685148.8,178326.4,75084.8],
-    ["Viet Nam",170941.4,90703.6,87215],
+    ["Vietnam",170941.4,90703.6,87215],
     ["Yemen",310939.2,108357.6,56534.4],
     ["Zambia",709737.6,30201.6,7550.4],
     ["Zimbabwe",349058,35298,11766]]
