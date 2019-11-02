@@ -228,7 +228,7 @@ def produce_CSV():
     df = pd.DataFrame(columns=columns, dtype='float')
     df.index.name = 'Country'
 
-    csvfilename = 'results/AEZ-by-country.csv'
+    countrycsvfilename = 'results/AEZ-by-country.csv'
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
@@ -295,7 +295,23 @@ def produce_CSV():
                         df.loc[admin, f"{tmr}|AEZ{n}"] += (km2_blk[aez]).sum()
                         n += 1
 
-    df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
+    df.sort_index(axis='index').to_csv(countrycsvfilename, float_format='%.2f')
+
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    df_region.index.name = 'Region'
+    for country, row in df.iterrows():
+        region = admin_names.region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+
+    for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate/Boreal-Humid',
+            'Temperate/Boreal-Semiarid', 'Arctic']:
+        tmrfilename = tmr.translate(str.maketrans('/', '-'))
+        filename = f"results/AEZ-{tmrfilename}-by-region.csv"
+        df_region.filter(regex=f'^{tmr.lower()}',axis=1).to_csv(filename, float_format='%.2f')
+
 
 
 def create_AEZ_GeoTIFF(ref_img, filename):
@@ -497,5 +513,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
-    produce_GeoTIFF()
-    produce_PNGs()
+    #produce_GeoTIFF()
+    #produce_PNGs()
