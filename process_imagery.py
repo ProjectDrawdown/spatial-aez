@@ -93,9 +93,9 @@ def populate_tmr(kg_blk):
 
 def populate_slope(sl_blk):
     slope = {}
-    slope['minimal'] = sl_blk < 8.0
-    slope['moderate'] = np.logical_and(sl_blk >= 8.0, sl_blk < 30.0)
-    slope['steep'] = sl_blk >= 30.0
+    slope['minimal'] = np.logical_or.reduce((sl_blk[1], sl_blk[2], sl_blk[3], sl_blk[4]))
+    slope['moderate'] = np.logical_or(sl_blk[5], sl_blk[6])
+    slope['steep'] = np.logical_or(sl_blk[7], sl_blk[8])
     return slope
 
 
@@ -236,17 +236,21 @@ def produce_CSV():
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
-    layer = shapefile.GetLayerByIndex(0)
+    features = shapefile.GetLayerByIndex(0)
     kg_img = osgeo.gdal.Open(kg_filename, osgeo.gdal.GA_ReadOnly)
     kg_band = kg_img.GetRasterBand(1)
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
-    sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
-    sl_band = sl_img.GetRasterBand(9)
+    sl_img = {}
+    sl_band = {}
+    for idx in range(1, 9):
+        sl_filename = f"data/FAO/GloSlopesCl{idx}_30as.tif"
+        sl_img[idx] = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
+        sl_band[idx] = sl_img[idx].GetRasterBand(1)
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
-    for idx, feature in enumerate(layer):
+    for idx, feature in enumerate(features):
         admin = admin_names.lookup(feature.GetField("ADMIN"))
         if admin is None:
             continue
@@ -278,8 +282,10 @@ def produce_CSV():
                 kg_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
                 regime = populate_tmr(kg_blk)
 
-                s = sl_band.ReadAsArray(x, y, ncols, nrows)
-                sl_blk = np.repeat(np.repeat(s, 3, axis=1), 3, axis=0)
+                sl_blk = {}
+                for idx in range(1, 9):
+                    s = sl_band[idx].ReadAsArray(x, y, ncols, nrows)
+                    sl_blk[idx] = np.repeat(np.repeat(s, 3, axis=1), 3, axis=0)
                 slope = populate_slope(sl_blk)
 
                 lc_blk = lc_band.ReadAsArray(3*x, 3*y, 3*ncols, 3*nrows)
@@ -309,7 +315,7 @@ def produce_CSV():
     for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate/Boreal-Humid',
             'Temperate/Boreal-Semiarid', 'Arctic']:
         tmrfilename = tmr.translate(str.maketrans('/', '-'))
-        filename = f"results/AEZ-{tmrfilename}-by-region.csv"
+        filename = f"results/AEZ-{tmrfilename}-by-region-GAEZ.csv"
         df_region.filter(regex=f'^{tmr.lower()}',axis=1).to_csv(filename, float_format='%.2f')
 
 
@@ -513,5 +519,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
-    #produce_GeoTIFF()
-    #produce_PNGs()
+    produce_GeoTIFF()
+    produce_PNGs()
