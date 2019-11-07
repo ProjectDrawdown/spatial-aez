@@ -183,6 +183,28 @@ class WorkabilityLookup:
         return range(1, 8)
 
 
+class DegradedLandLookup:
+    """Binary indication of soil in LDPclass 1, 2, or 3."""
+    def __init__(self, mapfilename, maskdim='1km'):
+        self.maskdim = maskdim
+        self.img = osgeo.gdal.Open(mapfilename, osgeo.gdal.GA_ReadOnly)
+        self.band = self.img.GetRasterBand(1)
+
+    def km2(self, x, y, ncols, nrows, maskblock, km2block, df, admin):
+        block = self.band.ReadAsArray(x, y, ncols, nrows)
+        masked = np.ma.masked_array(block, mask=np.logical_not(maskblock))
+        for label in np.unique(masked):
+            if label is np.ma.masked:
+                continue
+            if label == 0.0:
+                df.loc[admin, "nondegraded"] += km2block[masked == label].sum()
+            else:
+                df.loc[admin, "degraded"] += km2block[masked == label].sum()
+
+    def get_columns(self):
+        return ["degraded", "nondegraded"]
+
+
 def start_pdb(sig, frame):
     """Start PDB on a signal."""
     pdb.Pdb().set_trace(frame)
@@ -241,6 +263,8 @@ if __name__ == '__main__':
                         action='store_true', help='process slope')
     parser.add_argument('--wk', default=False, required=False,
                         action='store_true', help='process workability')
+    parser.add_argument('--dg', default=False, required=False,
+                        action='store_true', help='process degraded land')
     parser.add_argument('--all', default=False, required=False,
                         action='store_true', help='process all')
     args = parser.parse_args()
@@ -308,11 +332,21 @@ if __name__ == '__main__':
         print('\n')
         processed = True
 
+    if args.dg or args.all:
+        mapfilename = 'data/lpd_int2/lpd_int2.tif'
+        csvfilename = 'Degraded-by-country.csv'
+        print(mapfilename)
+        lookupobj = DegradedLandLookup(mapfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        print('\n')
+        processed = True
+
     if not processed:
         print('Select one of:')
         print('\t-lc  : Land Cover')
         print('\t-kg  : Köppen-Geiger')
         print('\t-sl  : Slope')
         print('\t-wk  : Workability')
+        print('\t-dg  : Degraded Land')
         print('\t-all')
         sys.exit(1)
