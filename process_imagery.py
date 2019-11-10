@@ -93,9 +93,15 @@ def populate_tmr(kg_blk):
 
 def populate_slope(sl_blk):
     slope = {}
+    for i in range(1, 9):
+        sl_blk[i][sl_blk[i] == 255] = 0
     slope['minimal'] = (sl_blk[1] + sl_blk[2] + sl_blk[3] + sl_blk[4]) / 100.0
     slope['moderate'] = (sl_blk[5] + sl_blk[6]) / 100.0
     slope['steep'] = (sl_blk[7] + sl_blk[8]) / 100.0
+    (n, m) = sl_blk[1].shape
+    total = slope['minimal'].sum().sum() + slope['moderate'].sum().sum() + slope['steep'].sum().sum()
+    size = n * m * 1.0001
+    assert total <= size, f"{total} !<= {size}\n{sl_blk[1][200:210, 200:210]} {sl_blk[2][200:210, 200:210]} {sl_blk[3][200:210, 200:210]} {sl_blk[4][200:210, 200:210]} {sl_blk[5][200:210, 200:210]} {sl_blk[6][200:210, 200:210]} {sl_blk[7][200:210, 200:210]} {sl_blk[8][200:210, 200:210]}"
     return slope
 
 
@@ -203,7 +209,6 @@ def produce_CSV():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
-    sl_filename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
@@ -212,11 +217,12 @@ def produce_CSV():
     kg_band = kg_img.GetRasterBand(1)
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
-    sl_filename = f"data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif"
-    sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
+    sl_img = {}
     sl_band = {}
     for idx in range(1, 9):
-        sl_band[idx] = sl_img.GetRasterBand(idx)
+        sl_filename = f"data/FAO/GloSlopesCl{idx}_30as.tif"
+        sl_img[idx] = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
+        sl_band[idx] = sl_img[idx].GetRasterBand(1)
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
@@ -286,9 +292,8 @@ def produce_CSV():
     for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate/Boreal-Humid',
             'Temperate/Boreal-Semiarid', 'Arctic']:
         tmrfilename = tmr.translate(str.maketrans('/', '-'))
-        filename = f"results/AEZ-{tmrfilename}-by-region.csv"
+        filename = f"results/AEZ_IASA-{tmrfilename}-by-region.csv"
         df_region.filter(regex=f'^{tmr.lower()}',axis=1).to_csv(filename, float_format='%.2f')
-
 
 
 def create_AEZ_GeoTIFF(ref_img, filename):
@@ -316,6 +321,7 @@ def create_AEZ_GeoTIFF(ref_img, filename):
     band.SetRasterColorInterpretation(osgeo.gdal.GCI_PaletteIndex)
 
     return out
+
 
 def create_slope_GeoTIFF(ref_img, filename):
     drv = osgeo.gdal.GetDriverByName(ref_img.GetDriver().ShortName)
