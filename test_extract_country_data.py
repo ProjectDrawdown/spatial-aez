@@ -50,6 +50,36 @@ def test_country_areas_reasonable():
     assert num >= 4
 
 
+def test_region_areas_reasonable():
+    results = ['results/AEZ-*-by-region.csv', 'results/AEZ_IASA-*-by-region.csv']
+    num = 0
+
+    df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    regional = pd.DataFrame(0, index=regions, columns=['area'])
+    for country, row in df.iterrows():
+        region = admin_names.region_mapping[country]
+        if region is not None:
+            regional.loc[region, 'area'] += row.sum()
+
+    print(str(regional))
+    for g in results:
+        total = pd.DataFrame(0, index=regions, columns=['area'])
+        num += 1
+        for filename in glob.glob(g):
+            print(f"{filename}:")
+            df = pd.read_csv(filename).set_index('Region')
+            for region, row in df.iterrows():
+                total.loc[region, 'area'] += row.sum()
+        print(str(total))
+        for region in regional.index:
+            expected = regional.loc[region, 'area']
+            actual = total.loc[region, :].sum()
+            assert actual >= expected * 0.95
+            assert actual <= expected * 1.05
+
+
 @pytest.mark.skip(reason="still developing this test's asserts")
 def test_world_land_cover_vs_excel_esa():
     df = pd.read_csv('results/Land-Cover-by-country.csv').set_index('Country')
@@ -250,6 +280,19 @@ def test_AEZ_vs_excel():
             if total_expected > 100000:
                 assert total_actual >= total_expected * 0.1
                 assert total_actual <= total_expected * 2.5
+
+@pytest.mark.skip(reason="Not working yet.")
+def test_degraded_regional():
+    df = pd.read_csv('results/Degraded-by-country.csv').set_index('Country')
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    for country, row in df.iterrows():
+        region = admin_names.region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+    print(str(df_region))
+    assert False
 
 
 def test_kg():

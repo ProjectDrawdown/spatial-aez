@@ -93,9 +93,9 @@ def populate_tmr(kg_blk):
 
 def populate_slope(sl_blk):
     slope = {}
-    slope['minimal'] = np.logical_or.reduce((sl_blk[1], sl_blk[2], sl_blk[3], sl_blk[4]))
-    slope['moderate'] = np.logical_or(sl_blk[5], sl_blk[6])
-    slope['steep'] = np.logical_or(sl_blk[7], sl_blk[8])
+    slope['minimal'] = (sl_blk[1] + sl_blk[2] + sl_blk[3] + sl_blk[4]) / 100.0
+    slope['moderate'] = (sl_blk[5] + sl_blk[6]) / 100.0
+    slope['steep'] = (sl_blk[7] + sl_blk[8]) / 100.0
     return slope
 
 
@@ -132,92 +132,63 @@ def populate_soil_health(wk_blk):
 
 def yield_AEZs(regime, tmr, slope, land_use, soil_health):
     # AEZ1: Forest, prime, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        soil_health['prime'], slope['minimal']))
+    yield regime[tmr] * land_use['forest'] * soil_health['prime'] * slope['minimal']
     # AEZ2: Forest, good, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        soil_health['good'], slope['minimal']))
+    yield regime[tmr] * land_use['forest'] * soil_health['good'] * slope['minimal']
     # AEZ3: Forest, good, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    yield regime[tmr] * land_use['forest'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
     # AEZ4: Forest, good, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    yield regime[tmr] * land_use['forest'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
     # AEZ5: Forest, marginal, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        soil_health['marginal'], slope['minimal']))
+    yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['minimal']
     # AEZ6: Forest, marginal, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        soil_health['marginal'], slope['moderate']))
+    yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['moderate']
     # AEZ7: Forest, marginal, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['forest'],
-        soil_health['marginal'], slope['steep']))
+    yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['steep']
     # AEZ8: Grassland, prime, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        soil_health['prime'], slope['minimal']))
+    yield regime[tmr] * land_use['grassland'] * soil_health['prime'] * slope['minimal']
     # AEZ9: Grassland, good, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        soil_health['good'], slope['minimal']))
+    yield regime[tmr] * land_use['grassland'] * soil_health['good'] * slope['minimal']
     # AEZ10: Grassland, good, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    yield regime[tmr] * land_use['grassland'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
     # AEZ11: Grassland, good, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    yield regime[tmr] * land_use['grassland'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
     # AEZ12: Grassland, marginal, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        soil_health['marginal'], slope['minimal']))
+    yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['minimal']
     # AEZ13: Grassland, marginal, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        soil_health['marginal'], slope['moderate']))
+    yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['moderate']
     # AEZ14: Grassland, marginal, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['grassland'],
-        soil_health['marginal'], slope['steep']))
+    yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['steep']
     # AEZ15: Irrigated Cropland, prime, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        soil_health['prime'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['prime'] * slope['minimal']
     # AEZ16: Irrigated Cropland, good, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        soil_health['good'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['good'] * slope['minimal']
     # AEZ17: Irrigated Cropland, good, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
     # AEZ18: Irrigated Cropland, good, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
     # AEZ19: Irrigated Cropland, marginal, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        soil_health['marginal'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['minimal']
     # AEZ20: Irrigated Cropland, marginal, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        soil_health['marginal'], slope['moderate']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['moderate']
     # AEZ21: Irrigated Cropland, marginal, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_irrigated'],
-        soil_health['marginal'], slope['steep']))
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['steep']
     # AEZ22: Rainfed Cropland, prime, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        soil_health['prime'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['prime'] * slope['minimal']
     # AEZ23: Rainfed Cropland, good, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        soil_health['good'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['good'] * slope['minimal']
     # AEZ24: Rainfed Cropland, good, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['moderate']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
     # AEZ25: Rainfed Cropland, good, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        np.logical_or(soil_health['good'], soil_health['prime']), slope['steep']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
     # AEZ26: Rainfed Cropland, marginal, minimal
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        soil_health['marginal'], slope['minimal']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['minimal']
     # AEZ27: Rainfed Cropland, marginal, moderate
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        soil_health['marginal'], slope['moderate']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['moderate']
     # AEZ28: Rainfed Cropland, marginal, steep
-    yield np.logical_and.reduce((regime[tmr], land_use['cropland_rainfed'],
-        soil_health['marginal'], slope['steep']))
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['steep']
     # AEZ29: All Barren Land
-    yield np.logical_and(regime[tmr], np.logical_or.reduce((land_use['bare'],
-        land_use['ice'], land_use['urban'], soil_health['bare'])))
+    yield regime[tmr] * (land_use['bare'] + land_use['ice'] + land_use['urban'] + soil_health['bare'])
 
 
 def produce_CSV():
@@ -241,12 +212,11 @@ def produce_CSV():
     kg_band = kg_img.GetRasterBand(1)
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
-    sl_img = {}
+    sl_filename = f"data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif"
+    sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
     sl_band = {}
     for idx in range(1, 9):
-        sl_filename = f"data/FAO/GloSlopesCl{idx}_30as.tif"
-        sl_img[idx] = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
-        sl_band[idx] = sl_img[idx].GetRasterBand(1)
+        sl_band[idx] = sl_img.GetRasterBand(idx)
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
@@ -297,8 +267,9 @@ def produce_CSV():
 
                 for tmr in tmr_state.keys():
                     n = 1
-                    for aez in yield_AEZs(regime, tmr, slope, land_use, soil_health):
-                        df.loc[admin, f"{tmr}|AEZ{n}"] += (km2_blk[aez]).sum()
+                    for aez in yield_AEZs(regime=regime, tmr=tmr, slope=slope, land_use=land_use,
+                            soil_health=soil_health):
+                        df.loc[admin, f"{tmr}|AEZ{n}"] += (aez * km2_blk).sum()
                         n += 1
 
     df.sort_index(axis='index').to_csv(countrycsvfilename, float_format='%.2f')
@@ -315,7 +286,7 @@ def produce_CSV():
     for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate/Boreal-Humid',
             'Temperate/Boreal-Semiarid', 'Arctic']:
         tmrfilename = tmr.translate(str.maketrans('/', '-'))
-        filename = f"results/AEZ-{tmrfilename}-by-region-GAEZ.csv"
+        filename = f"results/AEZ-{tmrfilename}-by-region.csv"
         df_region.filter(regex=f'^{tmr.lower()}',axis=1).to_csv(filename, float_format='%.2f')
 
 
@@ -468,8 +439,9 @@ def produce_GeoTIFF():
 
             outarray = np.full((nrows, ncols), C_TMR_BLNK)
             for tmr, color in tmr_state.items():
-                for aez in yield_AEZs(regime, tmr, slope, land_use, soil_health):
-                    outarray[aez] = color
+                for aez in yield_AEZs(regime=regime, tmr=tmr, slope=slope, land_use=land_use,
+                        soil_health=soil_health):
+                    outarray[aez.astype(bool)] = color
                     color += 1
             aez_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
@@ -519,5 +491,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
-    produce_GeoTIFF()
-    produce_PNGs()
+    #produce_GeoTIFF()
+    #produce_PNGs()
