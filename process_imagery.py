@@ -491,5 +491,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
-    #produce_GeoTIFF()
-    #produce_PNGs()
+    produce_GeoTIFF()
+    produce_PNGs()
