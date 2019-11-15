@@ -311,8 +311,8 @@ if __name__ == '__main__':
         mapfilename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
         csvfilename = 'Slope-by-country.csv'
         print(mapfilename)
-        #lookupobj = GeomorphoLookup(mapfilename=mapfilename)
-        #process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        lookupobj = GeomorphoLookup(mapfilename=mapfilename)
+        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
         print('\n')
         processed = True
 
