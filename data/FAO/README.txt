@@ -30,3 +30,7 @@ gdal_translate -ot Byte -a_srs EPSG:4326 -co COMPRESS=DEFLATE ./GloSlopesCl5_30a
 gdal_translate -ot Byte -a_srs EPSG:4326 -co COMPRESS=DEFLATE ./GloSlopesCl6_30as.asc ./GloSlopesCl6_30as.tif
 gdal_translate -ot Byte -a_srs EPSG:4326 -co COMPRESS=DEFLATE ./GloSlopesCl7_30as.asc ./GloSlopesCl7_30as.tif
 gdal_translate -ot Byte -a_srs EPSG:4326 -co COMPRESS=DEFLATE ./GloSlopesCl8_30as.asc ./GloSlopesCl8_30as.tif
+
+gdalbuildvrt -separate GloSlopes.vrt GloSlopesCl1_30as.asc GloSlopesCl2_30as.asc GloSlopesCl3_30as.asc \
+    GloSlopesCl4_30as.asc GloSlopesCl5_30as.asc GloSlopesCl6_30as.asc GloSlopesCl7_30as.asc GloSlopesCl8_30as.asc
+gdal_translate -ot Byte -a_srs EPSG:4326 -co COMPRESS=ZSTD -co TILED=YES GloSlopes.vrt GloSlopes.tif

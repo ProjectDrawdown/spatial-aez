@@ -203,7 +203,7 @@ def produce_CSV():
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
-    sl_filename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
+    sl_filename = 'data/ConsolidatedSlope.tif'
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
@@ -212,7 +212,6 @@ def produce_CSV():
     kg_band = kg_img.GetRasterBand(1)
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
-    sl_filename = f"data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif"
     sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
     sl_band = {}
     for idx in range(1, 9):
@@ -391,7 +390,7 @@ def produce_GeoTIFF():
     """Produce a GeoTIFF file of Thermal Moisture Regime + Agro-Ecological Zone."""
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
     lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
-    sl_filename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
+    sl_filename = 'data/ConsolidatedSlope.tif'
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     kg_img = osgeo.gdal.Open(kg_filename, osgeo.gdal.GA_ReadOnly)
     kg_band = kg_img.GetRasterBand(1)
@@ -446,28 +445,28 @@ def produce_GeoTIFF():
             aez_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
             outarray = np.full((nrows, ncols), C_SLP_BLNK)
-            outarray[slope['minimal']] = C_SLP_MIN
-            outarray[slope['moderate']] = C_SLP_MOD
-            outarray[slope['steep']] = C_SLP_STP
+            outarray[slope['minimal'].astype(bool)] = C_SLP_MIN
+            outarray[slope['moderate'].astype(bool)] = C_SLP_MOD
+            outarray[slope['steep'].astype(bool)] = C_SLP_STP
             slope_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
             outarray = np.full((nrows, ncols), C_LUS_BLNK)
-            outarray[land_use['forest']] = C_LUS_FRST
-            outarray[land_use['cropland_rainfed']] = C_LUS_CRRF
-            outarray[land_use['cropland_irrigated']] = C_LUS_CRIR
-            outarray[land_use['grassland']] = C_LUS_GRSS
-            outarray[land_use['bare']] = C_LUS_BARE
-            outarray[land_use['urban']] = C_LUS_URBN
-            outarray[land_use['water']] = C_LUS_WATR
-            outarray[land_use['ice']] = C_LUS_ICE
+            outarray[land_use['forest'].astype(bool)] = C_LUS_FRST
+            outarray[land_use['cropland_rainfed'].astype(bool)] = C_LUS_CRRF
+            outarray[land_use['cropland_irrigated'].astype(bool)] = C_LUS_CRIR
+            outarray[land_use['grassland'].astype(bool)] = C_LUS_GRSS
+            outarray[land_use['bare'].astype(bool)] = C_LUS_BARE
+            outarray[land_use['urban'].astype(bool)] = C_LUS_URBN
+            outarray[land_use['water'].astype(bool)] = C_LUS_WATR
+            outarray[land_use['ice'].astype(bool)] = C_LUS_ICE
             land_use_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
             outarray = np.full((nrows, ncols), C_SLP_BLNK)
-            outarray[soil_health['prime']] = C_SLH_PRME
-            outarray[soil_health['good']] = C_SLH_GOOD
-            outarray[soil_health['marginal']] = C_SLH_MRGN
-            outarray[soil_health['bare']] = C_SLH_BARE
-            outarray[soil_health['water']] = C_SLH_WATR
+            outarray[soil_health['prime'].astype(bool)] = C_SLH_PRME
+            outarray[soil_health['good'].astype(bool)] = C_SLH_GOOD
+            outarray[soil_health['marginal'].astype(bool)] = C_SLH_MRGN
+            outarray[soil_health['bare'].astype(bool)] = C_SLH_BARE
+            outarray[soil_health['water'].astype(bool)] = C_SLH_WATR
             soil_health_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
     aez_f = None
@@ -491,5 +490,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
-    produce_GeoTIFF()
     produce_PNGs()
+    #produce_GeoTIFF()

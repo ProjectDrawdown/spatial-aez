@@ -51,7 +51,7 @@ def test_country_areas_reasonable():
 
 
 def test_region_areas_reasonable():
-    results = ['results/AEZ-*-by-region.csv', 'results/AEZ_IASA-*-by-region.csv']
+    results = ['results/AEZ-*-by-region.csv']
     num = 0
 
     df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
@@ -284,6 +284,20 @@ def test_AEZ_vs_excel():
 @pytest.mark.skip(reason="Not working yet.")
 def test_degraded_regional():
     df = pd.read_csv('results/Degraded-by-country.csv').set_index('Country')
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    for country, row in df.iterrows():
+        region = admin_names.region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+    print(str(df_region))
+    assert False
+
+
+@pytest.mark.skip(reason="Not working yet.")
+def test_workability_regional():
+    df = pd.read_csv('results/Workability-by-country.csv').set_index('Country')
     regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
             'Latin America', 'China', 'India', 'EU', 'USA']
     df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
