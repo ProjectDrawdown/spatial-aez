@@ -34,13 +34,36 @@ def start_pdb(sig, frame):
 
 def produce_CSV():
     """Produce a CSV file of degraded land for {forest, cropland, grassland}."""
-    columns = ['forest:degraded', 'forest:nondegraded',
-            'cropland:degraded', 'cropland:nondegraded',
-            'grassland:degraded', 'grassland:nondegraded',
-            'bare:degraded', 'bare:nondegraded',
-            'urban:degraded', 'urban:nondegraded',
-            'water:degraded', 'water:nondegraded',
-            'ice:degraded', 'ice:nondegraded']
+    columns = [
+            'forest:good:degraded', 'forest:marginal:degraded',
+            'forest:poor:degraded', 'forest:verypoor:degraded',
+            'forest:good:nondegraded', 'forest:marginal:nondegraded',
+            'forest:poor:nondegraded', 'forest:verypoor:nondegraded',
+            'cropland:good:degraded', 'cropland:marginal:degraded',
+            'cropland:poor:degraded', 'cropland:verypoor:degraded',
+            'cropland:good:nondegraded', 'cropland:marginal:nondegraded',
+            'cropland:poor:nondegraded', 'cropland:verypoor:nondegraded',
+            'grassland:good:degraded', 'grassland:marginal:degraded',
+            'grassland:poor:degraded', 'grassland:verypoor:degraded',
+            'grassland:good:nondegraded', 'grassland:marginal:nondegraded',
+            'grassland:poor:nondegraded', 'grassland:verypoor:nondegraded',
+            'bare:good:degraded', 'bare:marginal:degraded',
+            'bare:poor:degraded', 'bare:verypoor:degraded',
+            'bare:good:nondegraded', 'bare:marginal:nondegraded',
+            'bare:poor:nondegraded', 'bare:verypoor:nondegraded',
+            'urban:good:degraded', 'urban:marginal:degraded',
+            'urban:poor:degraded', 'urban:verypoor:degraded',
+            'urban:good:nondegraded', 'urban:marginal:nondegraded',
+            'urban:poor:nondegraded', 'urban:verypoor:nondegraded',
+            'water:good:degraded', 'water:marginal:degraded',
+            'water:poor:degraded', 'water:verypoor:degraded',
+            'water:good:nondegraded', 'water:marginal:nondegraded',
+            'water:poor:nondegraded', 'water:verypoor:nondegraded',
+            'ice:good:degraded', 'ice:marginal:degraded',
+            'ice:poor:degraded', 'ice:verypoor:degraded',
+            'ice:good:nondegraded', 'ice:marginal:nondegraded',
+            'ice:poor:nondegraded', 'ice:verypoor:nondegraded',
+            ]
     df = pd.DataFrame(columns=columns, dtype='float')
     df.index.name = 'Country'
 
@@ -55,6 +78,10 @@ def produce_CSV():
     lpd_filename = 'data/lpd_int2/lpd_int2.tif'
     lpd_img = osgeo.gdal.Open(lpd_filename, osgeo.gdal.GA_ReadOnly)
     lpd_band = lpd_img.GetRasterBand(1)
+
+    wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
+    wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
+    wk_band = wk_img.GetRasterBand(1)
 
     for idx, feature in enumerate(features):
         admin = admin_names.lookup(feature.GetField("ADMIN"))
@@ -85,41 +112,44 @@ def produce_CSV():
                 km2_blk = (np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)) / 9.0
 
                 lc_blk = lc_band.ReadAsArray(3*x, 3*y, 3*ncols, 3*nrows)
-                forest = np.logical_or.reduce((lc_blk == 12, lc_blk == 50,
+                lc = {}
+                lc['forest'] = np.logical_or.reduce((lc_blk == 12, lc_blk == 50,
                         lc_blk == 60, lc_blk == 61, lc_blk == 62,
                         lc_blk == 70, lc_blk == 71, lc_blk == 72,
                         lc_blk == 80, lc_blk == 81, lc_blk == 82,
                         lc_blk == 90, lc_blk == 160, lc_blk == 170))
-                cropland = np.logical_or.reduce((lc_blk == 10, lc_blk == 30,
+                lc['cropland'] = np.logical_or.reduce((lc_blk == 10, lc_blk == 30,
                         lc_blk == 20))
-                grassland = np.logical_or.reduce((lc_blk == 11, lc_blk == 40,
+                lc['grassland'] = np.logical_or.reduce((lc_blk == 11, lc_blk == 40,
                         lc_blk == 100, lc_blk == 110, lc_blk == 120, lc_blk == 121, lc_blk == 122,
                         lc_blk == 130, lc_blk == 150, lc_blk == 151, lc_blk == 152, lc_blk == 153,
                         lc_blk == 180))
-                bare = np.logical_or.reduce((lc_blk == 140, lc_blk == 200, lc_blk == 201, lc_blk == 202))
-                urban = (lc_blk == 190)
-                water = (lc_blk == 210)
-                ice = (lc_blk == 220)
+                lc['bare'] = np.logical_or.reduce((lc_blk == 140, lc_blk == 200,
+                        lc_blk == 201, lc_blk == 202))
+                lc['urban'] = (lc_blk == 190)
+                lc['water'] = (lc_blk == 210)
+                lc['ice'] = (lc_blk == 220)
 
                 k = lpd_band.ReadAsArray(x, y, ncols, nrows)
+                lpd = {}
                 lpd_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
-                degraded = (lpd_blk != 0.0)
-                nondegraded = (lpd_blk == 0.0)
+                lpd['degraded'] = (lpd_blk != 0.0)
+                lpd['nondegraded'] = (lpd_blk == 0.0)
 
-                df.loc[admin, 'forest:degraded'] += (np.logical_and(forest, degraded) * km2_blk).sum()
-                df.loc[admin, 'forest:nondegraded'] += (np.logical_and(forest, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'cropland:degraded'] += (np.logical_and(cropland, degraded) * km2_blk).sum()
-                df.loc[admin, 'cropland:nondegraded'] += (np.logical_and(cropland, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'grassland:degraded'] += (np.logical_and(grassland, degraded) * km2_blk).sum()
-                df.loc[admin, 'grassland:nondegraded'] += (np.logical_and(grassland, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'bare:degraded'] += (np.logical_and(bare, degraded) * km2_blk).sum()
-                df.loc[admin, 'bare:nondegraded'] += (np.logical_and(bare, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'urban:degraded'] += (np.logical_and(urban, degraded) * km2_blk).sum()
-                df.loc[admin, 'urban:nondegraded'] += (np.logical_and(urban, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'water:degraded'] += (np.logical_and(water, degraded) * km2_blk).sum()
-                df.loc[admin, 'water:nondegraded'] += (np.logical_and(water, nondegraded) * km2_blk).sum()
-                df.loc[admin, 'ice:degraded'] += (np.logical_and(ice, degraded) * km2_blk).sum()
-                df.loc[admin, 'ice:nondegraded'] += (np.logical_and(ice, nondegraded) * km2_blk).sum()
+                k = wk_band.ReadAsArray(x, y, ncols, nrows)
+                wk_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
+                work = {}
+                work['good'] = (wk_blk == 1)
+                work['marginal'] = (wk_blk == 2)
+                work['poor'] = (wk_blk == 3)
+                work['verypoor'] = (wk_blk == 4)
+
+                for cover in lc.keys():
+                    for degraded in lpd.keys():
+                        for soil in work.keys():
+                            key = f'{cover}:{soil}:{degraded}'
+                            df.loc[admin, key] += (np.logical_and.reduce((lc[cover], lpd[degraded],
+                                work[soil])) * km2_blk).sum()
 
     csvfilename = 'results/degraded-cover-by-country.csv'
     df.sort_index(axis='index').to_csv(csvfilename, float_format='%.2f')
