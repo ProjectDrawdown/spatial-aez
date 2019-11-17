@@ -33,9 +33,11 @@ np.set_printoptions(threshold=sys.maxsize)
 C_TMR_TRHU =   0  # tropical-humid
 C_TMR_ARID =  30  # arid
 C_TMR_TRSA =  60  # tropical-semiarid
-C_TMR_TBHU =  90  # temperate/boreal-humid
-C_TMR_TBSA = 120  # temperate/boreal-semiarid
-C_TMR_ARTC = 150  # arctic
+C_TMR_THU  =  90  # temperate-humid
+C_TMR_TSA  = 120  # temperate-semiarid
+C_TMR_BHU  = 150  # boreal-humid
+C_TMR_BSA  = 180  # boreal-semiarid
+C_TMR_ARTC = 210  # arctic
 C_TMR_BLNK = 255
 
 C_SLP_MIN  =   0  # minimal slope
@@ -64,8 +66,10 @@ tmr_state = {
         'tropical-humid': C_TMR_TRHU,
         'arid': C_TMR_ARID,
         'tropical-semiarid': C_TMR_TRSA,
-        'temperate/boreal-humid': C_TMR_TBHU,
-        'temperate/boreal-semiarid': C_TMR_TBSA,
+        'temperate-humid': C_TMR_THU,
+        'temperate-semiarid': C_TMR_TSA,
+        'boreal-humid': C_TMR_BHU,
+        'boreal-semiarid': C_TMR_BSA,
         'arctic': C_TMR_ARTC,
         }
 
@@ -81,11 +85,12 @@ def populate_tmr(kg_blk):
     regime['tropical-humid'] = np.logical_or.reduce((kg_blk == 1, kg_blk == 2, kg_blk == 3))
     regime['arid'] = np.logical_or(kg_blk == 4, kg_blk == 5)
     regime['tropical-semiarid'] = np.logical_or(kg_blk == 6, kg_blk == 7)
-    regime['temperate/boreal-semiarid'] = np.logical_or.reduce((kg_blk == 8, kg_blk == 9,
-            kg_blk == 10, kg_blk == 17, kg_blk == 18, kg_blk == 19, kg_blk == 20,
-            kg_blk == 21, kg_blk == 22, kg_blk == 23, kg_blk == 24))
-    regime['temperate/boreal-humid'] = np.logical_or.reduce((kg_blk == 11, kg_blk == 12,
-            kg_blk == 13, kg_blk == 14, kg_blk == 15, kg_blk == 16, kg_blk == 25,
+    regime['temperate-semiarid'] = np.logical_or.reduce((kg_blk == 8, kg_blk == 9, kg_blk == 10))
+    regime['temperate-humid'] = np.logical_or.reduce((kg_blk == 11, kg_blk == 12,
+            kg_blk == 13, kg_blk == 14, kg_blk == 15, kg_blk == 16))
+    regime['boreal-semiarid'] = np.logical_or.reduce((kg_blk == 17, kg_blk == 18,
+            kg_blk == 19, kg_blk == 20, kg_blk == 21, kg_blk == 22, kg_blk == 23, kg_blk == 24))
+    regime['boreal-humid'] = np.logical_or.reduce((kg_blk == 25,
             kg_blk == 26, kg_blk == 27, kg_blk == 28))
     regime['arctic'] = np.logical_or(kg_blk == 29, kg_blk == 30)
     return regime
@@ -282,8 +287,8 @@ def produce_CSV():
         if region is not None:
             df_region.loc[region, :] += row
 
-    for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate/Boreal-Humid',
-            'Temperate/Boreal-Semiarid', 'Arctic']:
+    for tmr in ['Tropical-Humid', 'Arid', 'Tropical-Semiarid', 'Temperate-Humid',
+            'Temperate-Semiarid', 'Boreal-Humid', 'Boreal-Semiarid', 'Arctic']:
         tmrfilename = tmr.translate(str.maketrans('/', '-'))
         filename = f"results/AEZ-{tmrfilename}-by-region.csv"
         df_region.filter(regex=f'^{tmr.lower()}',axis=1).to_csv(filename, float_format='%.2f')
@@ -303,11 +308,13 @@ def create_AEZ_GeoTIFF(ref_img, filename):
     colors = osgeo.gdal.ColorTable()
     colors.SetColorEntry(C_TMR_BLNK, (0,0,0))
 
-    colors.CreateColorRamp(C_TMR_TRHU, (0,128,0),   C_TMR_TRHU+29, (0,255,0))
+    colors.CreateColorRamp(C_TMR_TRHU, (0,192,0),   C_TMR_TRHU+29, (0,255,0))
     colors.CreateColorRamp(C_TMR_ARID, (128,128,0), C_TMR_ARID+29, (255,255,0))
     colors.CreateColorRamp(C_TMR_TRSA, (0,0,128),   C_TMR_TRSA+29, (0,0,255))
-    colors.CreateColorRamp(C_TMR_TBHU, (128,0,0),   C_TMR_TBHU+29, (255,0,0))
-    colors.CreateColorRamp(C_TMR_TBSA, (128,0,128), C_TMR_TBSA+29, (255,0,255))
+    colors.CreateColorRamp(C_TMR_THU,  (128,0,0),   C_TMR_THU+29,  (255,0,0))
+    colors.CreateColorRamp(C_TMR_TSA,  (128,0,128), C_TMR_TSA+29,  (255,0,255))
+    colors.CreateColorRamp(C_TMR_BHU,  (0,64,0),   C_TMR_BHU+29,  (0,128,0))
+    colors.CreateColorRamp(C_TMR_BSA,  (0,128,128), C_TMR_BSA+29,  (0,255,255))
     colors.CreateColorRamp(C_TMR_ARTC, (64,64,64),  C_TMR_ARTC+29, (192,192,192))
 
     band = out.GetRasterBand(1)
