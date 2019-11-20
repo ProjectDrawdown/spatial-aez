@@ -404,7 +404,9 @@ def produce_GeoTIFF():
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
     sl_img = osgeo.gdal.Open(sl_filename, osgeo.gdal.GA_ReadOnly)
-    sl_band = sl_img.GetRasterBand(9)
+    sl_band = {}
+    for idx in range(1, 9):
+        sl_band[idx] = sl_img.GetRasterBand(idx)
     wk_img = osgeo.gdal.Open(wk_filename, osgeo.gdal.GA_ReadOnly)
     wk_band = wk_img.GetRasterBand(1)
 
@@ -432,9 +434,20 @@ def produce_GeoTIFF():
             kg_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
             regime = populate_tmr(kg_blk)
 
-            k = sl_band.ReadAsArray(x3, y3, ncols3, nrows3)
-            sl_blk = np.repeat(np.repeat(k, 3, axis=1), 3, axis=0)
+            sl_blk = {}
+            for idx in range(1, 9):
+                s = sl_band[idx].ReadAsArray(x3, y3, ncols3, nrows3)
+                sl_blk[idx] = np.repeat(np.repeat(s, 3, axis=1), 3, axis=0)
+
             slope = populate_slope(sl_blk)
+            plurality = {}
+            plurality['steep'] = ((slope['steep'] >= slope['moderate']) &
+                    (slope['steep'] >= slope['minimal']))
+            plurality['moderate'] = ((slope['moderate'] > slope['steep']) &
+                    (slope['moderate'] >= slope['minimal']))
+            plurality['minimal'] = ((slope['minimal'] > slope['steep']) &
+                    (slope['minimal'] >= slope['moderate']))
+            slope = plurality
 
             lc_blk = lc_band.ReadAsArray(x, y, ncols, nrows)
             land_use = populate_land_use(lc_blk)
@@ -497,5 +510,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGUSR1, start_pdb)
     os.environ['GDAL_CACHEMAX'] = '128'
     produce_CSV()
+    produce_GeoTIFF()
     produce_PNGs()
-    #produce_GeoTIFF()
