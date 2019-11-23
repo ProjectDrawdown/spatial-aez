@@ -15,3 +15,32 @@ of the material contained in the Harmonized World Soil Database, as follows:
 Citation
   FAO/IIASA/ISRIC/ISSCAS/JRC, 2012. Harmonized World Soil Database (version 1.2).
   FAO, Rome, Italy and IIASA, Laxenburg, Austria.
+
+
+------------
+GloSlopes.tif
+
+http://webarchive.iiasa.ac.at/Research/LUC/External-World-soil-database/HTML/global-terrain-doc.html
+describes the slope data as supplementary to the Harmonized World Soil Database.
+It does not specify a separate copyright, but does describe the citation:
+
+Data Citation:
+  Fischer, G., F. Nachtergaele, S. Prieler, H.T. van Velthuizen, L. Verelst,
+  D. Wiberg, 2008. Global Agro-ecological Zones Assessment for Agriculture (GAEZ 2008).
+  IIASA, Laxenburg, Austria and FAO, Rome, Italy.
+
+The copyright from the Harmonized World Soil Database is reproduced here:
+
+© 2008-2012 COPYRIGHT FAO, IIASA, ISRIC, ISSCAS, JRC 
+All rights reserved. No part of this Harmonized World Soil Database may be reproduced,
+stored in a retrieval system or transmitted by any means for resale or other commercial
+purposes without written permission of the copyright holders. Reproduction and
+dissemination of material in this information product for educational or other
+noncommercial purposes are authorized without any prior written permission from the
+copyright holders provided the source is fully acknowledged. Full acknowledgement
+and referencing of all sources must be included in any documentation using any
+of the material contained in the Harmonized World Soil Database, as follows:
+
+Citation
+  FAO/IIASA/ISRIC/ISSCAS/JRC, 2012. Harmonized World Soil Database (version 1.2).
+  FAO, Rome, Italy and IIASA, Laxenburg, Austria.

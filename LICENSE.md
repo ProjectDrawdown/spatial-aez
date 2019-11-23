@@ -17,5 +17,5 @@ Data in this repository comes from other sources and carries the licenses assign
    Requires attribution, see data/geomorpho90m/LICENSE.txt.
    MERIT-DEM from which Geomorpho90m was generated is dual licensed CC-BY-NC-4.0 or ODbl-1.0, at the user's choice.  
 
-1. data/FAO  
+1. data/FAO (for soil workability and slope data)  
    Requires attribution, see data/FAO/LICENSE.txt.
