@@ -26,9 +26,9 @@ Data comes from the [European Space Agency Climate Change Initiative](http://map
 
 
 ### Slope
-Data comes from [Geomorpho90m](https://peerj.com/preprints/27595/), which is generated from [MERIT-DEM data](http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/).
+Data comes from [FAO Supplementary Data for the Harmonized World Soil Database](http://webarchive.iiasa.ac.at/Research/LUC/External-World-soil-database/HTML/global-terrain-slope-download.html), downloaded Oct 24, 2019.
 
-Classified Slope GeoTIFF in data/geomorpho90m/classified\_slope\_merit\_dem\_1km\_s0..0cm\_2018\_v1.0.tif produced 09 Oct 2019 from the tar.gz files retrieved from [Geomorpho90m Google Drive](https://drive.google.com/drive/folders/1D4YHUycBBhNFVVsz4ohaJI7QXV9BEh94) 06 Oct 2019. Note that the original slope files from Geomorpho90m are tens of GBytes in size, which exceeds the 2GB LFS maximum file size which Github allows and is therefore not checked in to this repository. The generated GeoTIFF file with slopes classified into their GAEZ3.0 bins compresses better and fits within the Github limits.
+FAO slope data extends to 60° North to South. Outside of this range, slope data is supplied by [Geomorpho90m](https://peerj.com/preprints/27595/), which is generated from [MERIT-DEM data](http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/). Classified Slope GeoTIFF in data/geomorpho90m/classified\_slope\_merit\_dem\_1km\_s0..0cm\_2018\_v1.0.tif produced 09 Oct 2019 from the tar.gz files retrieved from [Geomorpho90m Google Drive](https://drive.google.com/drive/folders/1D4YHUycBBhNFVVsz4ohaJI7QXV9BEh94) 06 Oct 2019. Note that the original slope files from Geomorpho90m are tens of GBytes in size, which exceeds the 2GB LFS maximum file size which Github allows and is therefore not checked in to this repository. The generated GeoTIFF file with slopes classified into their GAEZ3.0 bins compresses better and fits within the Github limits.
 
 
 ### Soil Workability
