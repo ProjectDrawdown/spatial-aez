@@ -55,10 +55,10 @@ C_LUS_WATR =   6  # water
 C_LUS_ICE  =   7  # ice
 C_LUS_BLNK =   8
 
-C_SLH_PRME =   0  # prime
-C_SLH_GOOD =   1  # good
-C_SLH_MRGN =   2  # marginal
-C_SLH_BARE =   4  # bare
+C_SLH_GOOD =   0  # good
+C_SLH_MRGN =   1  # marginal
+C_SLH_POOR =   2  # poor
+C_SLH_BARE =   4  # barren
 C_SLH_WATR =   5  # water
 C_SLH_BLNK =   6
 
@@ -127,73 +127,76 @@ def populate_land_use(lc_blk):
 
 def populate_soil_health(wk_blk):
     soil_health = {}
-    soil_health['prime'] = (wk_blk == 1)
-    soil_health['good'] = (wk_blk == 2)
-    soil_health['marginal'] = np.logical_or(wk_blk == 3, wk_blk == 4)
-    soil_health['bare'] = np.logical_or(wk_blk == 5, wk_blk == 6)
+    soil_health['good'] = (wk_blk == 1)
+    soil_health['marginal'] = (wk_blk == 2)
+    soil_health['poor'] = np.logical_or.reduce((wk_blk == 3, wk_blk == 4, wk_blk == 6))
+    soil_health['barren'] = (wk_blk == 5)
     soil_health['water'] = (wk_blk == 7)
     return soil_health
 
 
 def yield_AEZs(regime, tmr, slope, land_use, soil_health):
-    # AEZ1: Forest, prime, minimal
-    yield regime[tmr] * land_use['forest'] * soil_health['prime'] * slope['minimal']
-    # AEZ2: Forest, good, minimal
+    # AEZ1: Forest, good, minimal
     yield regime[tmr] * land_use['forest'] * soil_health['good'] * slope['minimal']
-    # AEZ3: Forest, good, moderate
-    yield regime[tmr] * land_use['forest'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
-    # AEZ4: Forest, good, steep
-    yield regime[tmr] * land_use['forest'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
-    # AEZ5: Forest, marginal, minimal
+    # AEZ2: Forest, marginal, minimal
     yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['minimal']
-    # AEZ6: Forest, marginal, moderate
-    yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['moderate']
-    # AEZ7: Forest, marginal, steep
-    yield regime[tmr] * land_use['forest'] * soil_health['marginal'] * slope['steep']
-    # AEZ8: Grassland, prime, minimal
-    yield regime[tmr] * land_use['grassland'] * soil_health['prime'] * slope['minimal']
-    # AEZ9: Grassland, good, minimal
+    # AEZ3: Forest, marginal, moderate
+    yield regime[tmr] * land_use['forest'] * (soil_health['marginal'] + soil_health['good']) * slope['moderate']
+    # AEZ4: Forest, marginal, steep
+    yield regime[tmr] * land_use['forest'] * (soil_health['marginal'] + soil_health['good']) * slope['steep']
+    # AEZ5: Forest, poor, minimal
+    yield regime[tmr] * land_use['forest'] * soil_health['poor'] * slope['minimal']
+    # AEZ6: Forest, poor, moderate
+    yield regime[tmr] * land_use['forest'] * soil_health['poor'] * slope['moderate']
+    # AEZ7: Forest, poor, steep
+    yield regime[tmr] * land_use['forest'] * soil_health['poor'] * slope['steep']
+    # AEZ8: Grassland, good, minimal
     yield regime[tmr] * land_use['grassland'] * soil_health['good'] * slope['minimal']
-    # AEZ10: Grassland, good, moderate
-    yield regime[tmr] * land_use['grassland'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
-    # AEZ11: Grassland, good, steep
-    yield regime[tmr] * land_use['grassland'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
-    # AEZ12: Grassland, marginal, minimal
+    # AEZ9: Grassland, marginal, minimal
     yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['minimal']
-    # AEZ13: Grassland, marginal, moderate
-    yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['moderate']
-    # AEZ14: Grassland, marginal, steep
-    yield regime[tmr] * land_use['grassland'] * soil_health['marginal'] * slope['steep']
-    # AEZ15: Irrigated Cropland, prime, minimal
-    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['prime'] * slope['minimal']
-    # AEZ16: Irrigated Cropland, good, minimal
+    # AEZ10: Grassland, marginal, moderate
+    yield regime[tmr] * land_use['grassland'] * (soil_health['marginal'] + soil_health['good']) * slope['moderate']
+    # AEZ11: Grassland, marginal, steep
+    yield regime[tmr] * land_use['grassland'] * (soil_health['marginal'] + soil_health['good']) * slope['steep']
+    # AEZ12: Grassland, poor, minimal
+    yield regime[tmr] * land_use['grassland'] * soil_health['poor'] * slope['minimal']
+    # AEZ13: Grassland, poor, moderate
+    yield regime[tmr] * land_use['grassland'] * soil_health['poor'] * slope['moderate']
+    # AEZ14: Grassland, poor, steep
+    yield regime[tmr] * land_use['grassland'] * soil_health['poor'] * slope['steep']
+    # AEZ15: Irrigated Cropland, good, minimal
     yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['good'] * slope['minimal']
-    # AEZ17: Irrigated Cropland, good, moderate
-    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
-    # AEZ18: Irrigated Cropland, good, steep
-    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
-    # AEZ19: Irrigated Cropland, marginal, minimal
+    # AEZ16: Irrigated Cropland, marginal, minimal
     yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['minimal']
-    # AEZ20: Irrigated Cropland, marginal, moderate
-    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['moderate']
-    # AEZ21: Irrigated Cropland, marginal, steep
-    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['marginal'] * slope['steep']
-    # AEZ22: Rainfed Cropland, prime, minimal
-    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['prime'] * slope['minimal']
-    # AEZ23: Rainfed Cropland, good, minimal
+    # AEZ17: Irrigated Cropland, marginal, moderate
+    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['marginal'] + soil_health['good']) * slope['moderate']
+    # AEZ18: Irrigated Cropland, marginal, steep
+    yield regime[tmr] * land_use['cropland_irrigated'] * (soil_health['marginal'] + soil_health['good']) * slope['steep']
+    # AEZ19: Irrigated Cropland, poor, minimal
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['poor'] * slope['minimal']
+    # AEZ20: Irrigated Cropland, poor, moderate
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['poor'] * slope['moderate']
+    # AEZ21: Irrigated Cropland, poor, steep
+    yield regime[tmr] * land_use['cropland_irrigated'] * soil_health['poor'] * slope['steep']
+    # AEZ22: Rainfed Cropland, good, minimal
     yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['good'] * slope['minimal']
-    # AEZ24: Rainfed Cropland, good, moderate
-    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['good'] + soil_health['prime']) * slope['moderate']
-    # AEZ25: Rainfed Cropland, good, steep
-    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['good'] + soil_health['prime']) * slope['steep']
-    # AEZ26: Rainfed Cropland, marginal, minimal
+    # AEZ23: Rainfed Cropland, marginal, minimal
     yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['minimal']
-    # AEZ27: Rainfed Cropland, marginal, moderate
-    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['moderate']
-    # AEZ28: Rainfed Cropland, marginal, steep
-    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['marginal'] * slope['steep']
+    # AEZ24: Rainfed Cropland, marginal, moderate
+    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['marginal'] + soil_health['good']) * slope['moderate']
+    # AEZ25: Rainfed Cropland, marginal, steep
+    yield regime[tmr] * land_use['cropland_rainfed'] * (soil_health['marginal'] + soil_health['good']) * slope['steep']
+    # AEZ26: Rainfed Cropland, poor, minimal
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['poor'] * slope['minimal']
+    # AEZ27: Rainfed Cropland, poor, moderate
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['poor'] * slope['moderate']
+    # AEZ28: Rainfed Cropland, poor, steep
+    yield regime[tmr] * land_use['cropland_rainfed'] * soil_health['poor'] * slope['steep']
     # AEZ29: All Barren Land
-    yield regime[tmr] * (land_use['bare'] + land_use['ice'] + land_use['urban'] + soil_health['bare'])
+    bare = land_use['bare'] + land_use['ice'] + land_use['urban']
+    barren = soil_health['barren']
+    barren[bare] = 0.0  # avoid double counting
+    yield regime[tmr] * (bare + barren)
 
 
 def produce_CSV():
@@ -380,10 +383,10 @@ def create_soil_health_GeoTIFF(ref_img, filename):
 
     colors = osgeo.gdal.ColorTable()
     colors.SetColorEntry(C_SLH_BLNK, (0,0,0))
-    colors.SetColorEntry(C_SLH_PRME, (49,113,35))   # prime == dark brown
-    colors.SetColorEntry(C_SLH_GOOD, (212,145,0))   # good == light brown
-    colors.SetColorEntry(C_SLH_MRGN, (173,13,2))    # marginal == reddish brown
-    colors.SetColorEntry(C_SLH_BARE, (80,80,80))    # bare == dark grey
+    colors.SetColorEntry(C_SLH_GOOD, (49,113,35))   # good == dark brown
+    colors.SetColorEntry(C_SLH_MRGN, (212,145,0))   # marginal == light brown
+    colors.SetColorEntry(C_SLH_POOR, (173,13,2))    # poor == reddish brown
+    colors.SetColorEntry(C_SLH_BARE, (80,80,80))    # barren == dark grey
     colors.SetColorEntry(C_SLH_WATR, (128,128,240)) # water == blue
 
     band = out.GetRasterBand(1)
@@ -482,10 +485,10 @@ def produce_GeoTIFF():
             land_use_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 
             outarray = np.full((nrows, ncols), C_SLP_BLNK)
-            outarray[soil_health['prime'].astype(bool)] = C_SLH_PRME
             outarray[soil_health['good'].astype(bool)] = C_SLH_GOOD
             outarray[soil_health['marginal'].astype(bool)] = C_SLH_MRGN
-            outarray[soil_health['bare'].astype(bool)] = C_SLH_BARE
+            outarray[soil_health['poor'].astype(bool)] = C_SLH_POOR
+            outarray[soil_health['barren'].astype(bool)] = C_SLH_BARE
             outarray[soil_health['water'].astype(bool)] = C_SLH_WATR
             soil_health_f.GetRasterBand(1).WriteArray(outarray, xoff=x, yoff=y)
 

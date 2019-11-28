@@ -54,7 +54,7 @@ def test_region_areas_reasonable():
     results = ['results/AEZ-*-by-region.csv']
     num = 0
 
-    df = pd.read_csv('results/Slope-by-country.csv').set_index('Country')
+    df = pd.read_csv('results/Workability-by-country.csv').set_index('Country')
     regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
             'Latin America', 'China', 'India', 'EU', 'USA']
     regional = pd.DataFrame(0, index=regions, columns=['area'])
@@ -78,23 +78,91 @@ def test_region_areas_reasonable():
             actual = total.loc[region, :].sum()
             assert actual >= expected * 0.95
             assert actual <= expected * 1.05
+    assert False
 
 
 @pytest.mark.skip(reason="still developing this test's asserts")
 def test_world_land_cover_vs_excel_esa():
     df = pd.read_csv('results/Land-Cover-by-country.csv').set_index('Country')
     df.columns = df.columns.astype(int)
-    forest = grassland = shrubland = cropland = 0
+    forest = grassland = shrubland = cropland = lichens = bare = urban = water = ice = 0
     for country, row in df.iterrows():
-        #forest += row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
-        forest += row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
+        if country == 'Antarctica':
+            continue
+        forest += row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
         forest += row[80] + row[81] + row[82] + row[90] + row[160] + row[170]
         shrubland += row[40] + row[100] + row[110] + row[120] + row[121] + row[122] + row[180]
         shrubland += row[12]
         grassland += row[11] + row[130] + row[150] + row[151] + row[152] + row[153]
         cropland += row[10] + row[20] + row[30]
+        lichens += row[140]
+        bare += row[200] + row[201] + row[202]
+        urban += row[190]
+        water += row[210]
+        ice += row[220]
 
-    print(f"forest: {forest} grassland: {grassland} shrubland: {shrubland} cropland: {cropland}")
+    print(f"Land cover: forest: {forest:.0f} grassland: {grassland:.0f} shrubland: {shrubland:.0f} cropland: {cropland:.0f} lichens: {lichens:.0f} bare: {bare:.0f} urban: {urban:.0f} water: {water:.0f} ice: {ice:.0f}")
+    assert False
+
+
+def test_forested_areas():
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa', 'Latin America']
+    regional = pd.DataFrame(0, index=regions, columns=['forest_lc', 'forest_AEZ',
+        'grassland_lc', 'grassland_AEZ',
+        'cropland_rainfed_lc', 'cropland_rainfed_AEZ',
+        'cropland_irrigated_lc', 'cropland_irrigated_AEZ',
+        'bare_lc', 'bare_AEZ',
+        'total_lc', 'total_AEZ'])
+
+    df = pd.read_csv('results/Land-Cover-by-country.csv').set_index('Country')
+    df.columns = df.columns.astype(int)
+    for country, row in df.iterrows():
+        region_list = admin_names.region_mapping[country]
+        if region_list is None:
+            continue
+        for region in region_list:
+            if region is None or region not in regions:
+                continue
+            forest = row[12] + row[50] + row[60] + row[61] + row[62] + row[70] + row[71] + row[72]
+            forest += row[80] + row[81] + row[82] + row[90] + row[160] + row[170]
+            regional.loc[region, 'forest_lc'] += forest
+
+            cropland_rainfed = row[10] + row[30]
+            regional.loc[region, 'cropland_rainfed_lc'] += cropland_rainfed
+            cropland_irrigated = row[20]
+            regional.loc[region, 'cropland_irrigated_lc'] += cropland_irrigated
+
+            grassland = (row[11] + row[40] + row[100] + row[110] + row[120] + row[121] + row[122] + 
+                row[130] +  row[150] +  row[151] +  row[152] +  row[153] + row[180])
+            regional.loc[region, 'grassland_lc'] += grassland
+
+            bare = row[140] + row[200] + row[201] + row[202]
+            regional.loc[region, 'bare_lc'] += bare
+
+            regional.loc[region, 'total_lc'] += row.sum()
+
+    for filename in glob.glob('results/AEZ-*-by-region.csv'):
+        df = pd.read_csv(filename).set_index('Region')
+        for region, row in df.iterrows():
+            if region is None or region not in regions:
+                continue
+            for i in range(0, 7):
+                regional.loc[region, 'forest_AEZ'] += row[df.columns[i]]
+            for i in range(7, 14):
+                regional.loc[region, 'grassland_AEZ'] += row[df.columns[i]]
+            for i in range(14, 21):
+                regional.loc[region, 'cropland_irrigated_AEZ'] += row[df.columns[i]]
+            for i in range(21, 28):
+                regional.loc[region, 'cropland_rainfed_AEZ'] += row[df.columns[i]]
+            regional.loc[region, 'bare_AEZ'] += row[df.columns[28]]
+
+            regional.loc[region, 'total_AEZ'] += row.sum()
+
+    print(f"forest: {regional}")
+    print(f"forest_lc={regional.loc[:, 'forest_lc'].sum()}")
+    print(f"forest_AEZ={regional.loc[:, 'forest_AEZ'].sum()}")
+    print(f"total_lc={regional.loc[:, 'total_lc'].sum()}")
+    print(f"total_AEZ={regional.loc[:, 'total_AEZ'].sum()}")
     assert False
 
 
@@ -301,11 +369,15 @@ def test_workability_regional():
     regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
             'Latin America', 'China', 'India', 'EU', 'USA']
     df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    health = pd.DataFrame(0, index=regions, columns=['soil', 'bare'])
     for country, row in df.iterrows():
         region = admin_names.region_mapping[country]
         if region is not None:
             df_region.loc[region, :] += row
+            health.loc[region, 'soil'] += row['1'] + row['2'] + row['3'] + row['4']
+            health.loc[region, 'bare'] += row['5'] + row['6'] + row['7']
     print(str(df_region))
+    print(str(health))
     assert False
 
 
