@@ -6,6 +6,7 @@ The output of this code is:
 + a series of CSV files, with a row per country and column per data class.  Names are normalized to those used in [Project Drawdown](https://drawdown.org).  Data is calculated per country, correcting for WGS84 projection.  
 + GeoTIFF files of the Project Drawdown Thermal Moisture Regime + Agro-Ecological Zone, as well as files for each component which goes into the classification. In addtition, PNG files downsampled to 5% resolution are provided for easy web viewing.  
 
+<center><img src="results/AEZ_small.png" width="648" height="324" /></center>
 
 ## Data Sources
 Note that the data processed in this repository comes from external sources, most of which require
