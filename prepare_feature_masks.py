@@ -76,7 +76,7 @@ def process_shapefile():
         print(f'{outfile}')
         rasterize_one_feature(img=img, feature=feature, layer=layer, outfile=outfile)
 
-    img = osgeo.gdal.Open('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', osgeo.gdal.GA_ReadOnly)
+    img = osgeo.gdal.Open('data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif', osgeo.gdal.GA_ReadOnly)
     for idx, feature in enumerate(layer):
         a3 = feature.GetField("SOV_A3")
         outfile = f'masks/{a3}_{idx}_333m_mask._tif'
