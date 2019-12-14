@@ -51,7 +51,10 @@ def test_country_areas_reasonable():
 
 
 def test_region_areas_reasonable():
-    results = ['results/AEZ-*-by-region.csv']
+    non_aez_files = list(set(glob.glob("results/*-by-region.csv")) -
+            set(glob.glob("results/AEZ-*-by-region.csv")))
+
+    results = ['results/AEZ-*-by-region.csv'] + non_aez_files
     num = 0
 
     df = pd.read_csv('results/Workability-by-country.csv').set_index('Country')

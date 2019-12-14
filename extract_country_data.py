@@ -248,6 +248,19 @@ def process_map(lookupobj, csvfilename):
                               km2block=km2block, df=df, admin=admin)
     outputfilename = os.path.join('results', csvfilename)
     df.sort_index(axis='index').to_csv(outputfilename, float_format='%.2f')
+    return df
+
+
+def output_by_region(df, csvfilename):
+    regions = ['OECD90', 'Eastern Europe', 'Asia (Sans Japan)', 'Middle East and Africa',
+            'Latin America', 'China', 'India', 'EU', 'USA']
+    df_region = pd.DataFrame(0, index=regions, columns=df.columns.copy())
+    df_region.index.name = 'Region'
+    for country, row in df.iterrows():
+        region = admin_names.region_mapping[country]
+        if region is not None:
+            df_region.loc[region, :] += row
+    df_region.to_csv(csvfilename, float_format='%.2f')
 
 
 if __name__ == '__main__':
@@ -271,74 +284,63 @@ if __name__ == '__main__':
     processed = False
 
     if args.lc or args.all:
-        land_cover_files = [
-                ('data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif', 'Land-Cover-by-country.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country-2015.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2013-v2.0.7.tif', 'Land-Cover-by-country-2013.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2012-v2.0.7.tif', 'Land-Cover-by-country-2012.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2011-v2.0.7.tif', 'Land-Cover-by-country-2011.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7.tif', 'Land-Cover-by-country-2010.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2009-v2.0.7.tif', 'Land-Cover-by-country-2009.csv'),
-                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2008-v2.0.7.tif', 'Land-Cover-by-country-2008.csv')
-                ]
-        for (mapfilename, csvfilename) in land_cover_files:
-            if not os.path.exists(mapfilename):
-                print(f"Skipping missing {mapfilename}")
-                continue
-            print(mapfilename)
-            lookupobj = ESA_LC_lookup(mapfilename)
-            process_map(lookupobj=lookupobj, csvfilename=csvfilename)
-            print('\n')
+        mapfilename = 'data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif'
+        countrycsv = 'Land-Cover-by-country.csv'
+        regioncsv = 'Land-Cover-by-region.csv'
+        lookupobj = ESA_LC_lookup(mapfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
+        print('\n')
         processed = True
 
     if args.kg or args.all:
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
-        csvfilename = 'Köppen-Geiger-present-by-country.csv'
+        countrycsv = 'Köppen-Geiger-present-by-country.csv'
+        regioncsv = 'Köppen-Geiger-present-by-region.csv'
         print(mapfilename)
         lookupobj = KGlookup(mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
         print('\n')
 
         mapfilename = 'data/Beck_KG_V1/Beck_KG_V1_future_0p0083.tif'
-        csvfilename = 'Köppen-Geiger-future-by-country.csv'
+        countrycsv = 'Köppen-Geiger-future-by-country.csv'
+        regioncsv = 'Köppen-Geiger-future-by-region.csv'
         print(mapfilename)
         lookupobj = KGlookup(mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
         print('\n')
         processed = True
 
     if args.sl or args.all:
         mapfilename = 'data/geomorpho90m/classified_slope_merit_dem_1km_s0..0cm_2018_v1.0.tif'
-        csvfilename = 'Slope-by-country.csv'
+        countrycsv = 'Slope-by-country.csv'
+        regioncsv = 'Slope-by-region.csv'
         print(mapfilename)
         lookupobj = GeomorphoLookup(mapfilename=mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
         print('\n')
         processed = True
 
-        csvfilename = 'FAO-Slope-by-country.csv'
+        countrycsv = 'FAO-Slope-by-country.csv'
+        regioncsv = 'FAO-Slope-by-region.csv'
         print('data/FAO/GloSlopesCl*_30as.tif')
         lookupobj = FaoSlopeLookup()
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
         print('\n')
         processed = True
 
     if args.wk or args.all:
         mapfilename = 'data/FAO/workability_FAO_sq7_1km.tif'
-        csvfilename = 'Workability-by-country.csv'
+        countrycsv = 'Workability-by-country.csv'
+        regioncsv = 'Workability-by-region.csv'
         print(mapfilename)
         lookupobj = WorkabilityLookup(mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
-        print('\n')
-        processed = True
-
-    if args.dg or args.all:
-        mapfilename = 'data/lpd_int2/lpd_int2.tif'
-        csvfilename = 'Degraded-by-country.csv'
-        print(mapfilename)
-        lookupobj = DegradedLandLookup(mapfilename)
-        process_map(lookupobj=lookupobj, csvfilename=csvfilename)
+        df = process_map(lookupobj=lookupobj, csvfilename=countrycsv)
+        output_by_region(df=df, csvfilename=regioncsv)
         print('\n')
         processed = True
 
