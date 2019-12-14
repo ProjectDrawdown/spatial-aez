@@ -75,7 +75,7 @@ class KGlookup:
 
 
 class ESA_LC_lookup:
-    """Pixel color to Land Cover class in ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif
+    """Pixel color to Land Cover class in C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif
 
        There are legends of LCCS<->color swatch in both
        http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-QuickUserGuide-LC-Maps_v2-0-7.pdf
@@ -272,14 +272,15 @@ if __name__ == '__main__':
 
     if args.lc or args.all:
         land_cover_files = [
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2013-v2.0.7.tif', 'Land-Cover-by-country-2013.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2012-v2.0.7.tif', 'Land-Cover-by-country-2012.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2011-v2.0.7.tif', 'Land-Cover-by-country-2011.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7.tif', 'Land-Cover-by-country-2010.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2009-v2.0.7.tif', 'Land-Cover-by-country-2009.csv'),
-                ('data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2008-v2.0.7.tif', 'Land-Cover-by-country-2008.csv')
+                ('data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif', 'Land-Cover-by-country.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif', 'Land-Cover-by-country-2015.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2014-v2.0.7.tif', 'Land-Cover-by-country-2014.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2013-v2.0.7.tif', 'Land-Cover-by-country-2013.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2012-v2.0.7.tif', 'Land-Cover-by-country-2012.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2011-v2.0.7.tif', 'Land-Cover-by-country-2011.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7.tif', 'Land-Cover-by-country-2010.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2009-v2.0.7.tif', 'Land-Cover-by-country-2009.csv'),
+                ('data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2008-v2.0.7.tif', 'Land-Cover-by-country-2008.csv')
                 ]
         for (mapfilename, csvfilename) in land_cover_files:
             if not os.path.exists(mapfilename):

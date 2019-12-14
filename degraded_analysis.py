@@ -71,7 +71,7 @@ def produce_CSV():
     shapefile = osgeo.ogr.Open(shapefilename)
     assert shapefile.GetLayerCount() == 1
     features = shapefile.GetLayerByIndex(0)
-    lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
+    lc_filename = 'data/copernicus/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
     lc_img = osgeo.gdal.Open(lc_filename, osgeo.gdal.GA_ReadOnly)
     lc_band = lc_img.GetRasterBand(1)
 

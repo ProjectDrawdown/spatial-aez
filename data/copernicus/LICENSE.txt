@@ -19,3 +19,14 @@ If you wish to use one or several CCI-LC products in advertising or in any
 commercial promotion, you shall acknowledge the ESA CCI Land Cover project
 and you must submit the layout to the project for approval beforehand
 (contact@esa-landcover-cci.org).
+
+
+----------------------
+
+Please see data/copernicus/20180314_Copernicus_License_V1.1.pdf
+for details of the Copernicus license, downloaded from
+https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-land-cover?tab=overview
+at the time the data was downloaded 13 Dec 2019.
+
+opernicus license requires citation in academic papers and acknowledgement in
+public presentations, along with other terms.

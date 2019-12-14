@@ -21,9 +21,9 @@ Data files come from the Nature article
 
 
 ### Land Cover
-Data comes from the [European Space Agency Climate Change Initiative](http://maps.elie.ucl.ac.be/CCI/viewer/download.php).
+Data comes from the [European Space Agency Climate Change Initiative](http://maps.elie.ucl.ac.be/CCI/viewer/download.php), supported by the [Copernicus Climate Change Service (C3S) Climate Data Store (CDS)](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-land-cover?tab=overview).
 
-[Land Cover GeoTIFF](https://storage.googleapis.com/cci-lc-v207/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.zip) retrieved 19 Sep 2019.
+2018 NetCDF file C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.nc retrieved 13 Dec 2019.
 
 
 ### Slope

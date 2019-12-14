@@ -210,7 +210,7 @@ def produce_CSV():
     countrycsvfilename = 'results/AEZ-by-country.csv'
     shapefilename = 'data/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
-    lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
+    lc_filename = 'data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif'
     sl_filename = 'data/ConsolidatedSlope.tif'
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     shapefile = osgeo.ogr.Open(shapefilename)
@@ -399,7 +399,7 @@ def create_soil_health_GeoTIFF(ref_img, filename):
 def produce_GeoTIFF():
     """Produce a GeoTIFF file of Thermal Moisture Regime + Agro-Ecological Zone."""
     kg_filename = 'data/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif'
-    lc_filename = 'data/ucl_elie/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2015-v2.0.7.tif'
+    lc_filename = 'data/copernicus/C3S-LC-L4-LCCS-Map-300m-P1Y-2018-v2.1.1.tif'
     sl_filename = 'data/ConsolidatedSlope.tif'
     wk_filename = 'data/FAO/workability_FAO_sq7_1km.tif'
     kg_img = osgeo.gdal.Open(kg_filename, osgeo.gdal.GA_ReadOnly)
