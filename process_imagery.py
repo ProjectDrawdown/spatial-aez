@@ -110,9 +110,9 @@ def populate_land_use(lc_blk):
             lc_blk == 60, lc_blk == 61, lc_blk == 62, lc_blk == 70, lc_blk == 71, lc_blk == 72,
             lc_blk == 80, lc_blk == 81, lc_blk == 82, lc_blk == 90, lc_blk == 100,
             lc_blk == 160, lc_blk == 170))
-    land_use['cropland_rainfed'] = np.logical_or.reduce((lc_blk == 10, lc_blk == 30, lc_blk == 40))
+    land_use['cropland_rainfed'] = np.logical_or(lc_blk == 10, lc_blk == 30)
     land_use['cropland_irrigated'] = (lc_blk == 20)
-    land_use['grassland'] = np.logical_or.reduce((lc_blk == 11, lc_blk == 110,
+    land_use['grassland'] = np.logical_or.reduce((lc_blk == 11, lc_blk == 40, lc_blk == 110,
             lc_blk == 120, lc_blk == 121, lc_blk == 122,
             lc_blk == 130, lc_blk == 150, lc_blk == 151, lc_blk == 152, lc_blk == 153,
             lc_blk == 180))
