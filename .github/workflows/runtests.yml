@@ -15,11 +15,19 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
+        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+        sudo apt-get update
+        sudo apt-get install -y binutils libpq-dev libgdal-dev gdal-bin
+        export CPLUS_INCLUDE_PATH=/usr/include/gdal
+        export C_INCLUDE_PATH=/usr/include/gdal
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install numpy>=1.16.4
+        pip install GDAL==$(gdal-config --version)
+        pip install pandas>=0.25.0rc0
     - name: Test with pytest
       run: |
-        pip install pytest
+        pip install pytest>=5.0.0
+        pip install pytest-cov>=2.7.1
         pytest -v --cov=. --cov-report term --cov-report=xml --strict-markers
     - name: Export to codecov.io
       uses: codecov/codecov-action@v1.0.2
