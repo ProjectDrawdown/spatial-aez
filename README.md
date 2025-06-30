@@ -1,3 +1,5 @@
+### This repo is no longer being used or maintained and has been archived. Please visit [drawdown.org](https://www.drawdown.org/) for more information on our work.
+
 ## Process spatial climate maps
 
 Code in this repository extracts land area data from spatial maps for use in climate solution models.
